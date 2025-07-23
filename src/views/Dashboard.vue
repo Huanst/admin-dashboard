@@ -1,0 +1,766 @@
+<template>
+  <div class="dashboard">
+    <!-- 统计卡片 -->
+    <div class="stats-grid">
+      <div class="stat-card" v-for="stat in stats" :key="stat.key">
+        <div class="stat-content">
+          <div class="stat-info">
+            <h3 class="stat-title">{{ stat.title }}</h3>
+            <div class="stat-value">{{ stat.value }}</div>
+            <div class="stat-change" :class="stat.changeType">
+              <el-icon>
+                <component :is="stat.changeType === 'increase' ? 'TrendCharts' : 'Bottom'" />
+              </el-icon>
+              <span>{{ stat.change }}</span>
+            </div>
+          </div>
+          <div class="stat-icon" :style="{ backgroundColor: stat.color }">
+            <el-icon :size="24">
+              <component :is="stat.icon" />
+            </el-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 图表区域 -->
+    <div class="charts-grid">
+      <!-- 用户增长趋势 -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>用户增长趋势</h3>
+          <el-radio-group v-model="userTrendPeriod" size="small">
+            <el-radio-button value="7d">7天</el-radio-button>
+              <el-radio-button value="30d">30天</el-radio-button>
+              <el-radio-button value="90d">90天</el-radio-button>
+          </el-radio-group>
+        </div>
+        <div class="chart-content">
+          <div ref="userTrendChart" class="chart"></div>
+        </div>
+      </div>
+      
+      <!-- 图片生成趋势 -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>图片生成趋势</h3>
+          <el-radio-group v-model="imageTrendPeriod" size="small">
+            <el-radio-button value="7d">7天</el-radio-button>
+              <el-radio-button value="30d">30天</el-radio-button>
+              <el-radio-button value="90d">90天</el-radio-button>
+          </el-radio-group>
+        </div>
+        <div class="chart-content">
+          <div ref="imageTrendChart" class="chart"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 热门提示词和最新用户 -->
+    <div class="bottom-grid">
+      <!-- 热门提示词 -->
+      <div class="info-card">
+        <div class="card-header">
+          <h3>热门提示词</h3>
+          <el-button type="primary" link>查看更多</el-button>
+        </div>
+        <div class="card-content">
+          <div class="prompt-list">
+            <div 
+              v-for="prompt in popularPrompts" 
+              :key="prompt.id"
+              class="prompt-item"
+            >
+              <div class="prompt-text">{{ prompt.text }}</div>
+              <div class="prompt-count">{{ prompt.count }}次</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 最新用户 -->
+      <div class="info-card">
+        <div class="card-header">
+          <h3>最新用户</h3>
+          <el-button type="primary" link>查看更多</el-button>
+        </div>
+        <div class="card-content">
+          <div class="user-list">
+            <div 
+              v-for="user in recentUsers" 
+              :key="user.id"
+              class="user-item"
+            >
+              <el-avatar :size="32" :src="user.avatar">
+                <el-icon><UserIcon /></el-icon>
+              </el-avatar>
+              <div class="user-info">
+                <div class="user-name">{{ user.username }}</div>
+                <div class="user-time">{{ formatDate(user.createdAt) }}</div>
+              </div>
+              <el-tag :type="user.status === 'active' ? 'success' : 'info'" size="small">
+                {{ user.status === 'active' ? '活跃' : '新用户' }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, nextTick, watch } from 'vue'
+import * as echarts from 'echarts'
+import { useThemeStore } from '@/stores/theme'
+import { dashboardAPI } from '@/api/dashboard'
+import { userAPI } from '@/api/user'
+import { formatDate } from '@/utils'
+import type { TrendData, PopularPrompt, User } from '@/types/api'
+import {
+  User as UserIcon,
+  TrendCharts,
+  Bottom,
+  PieChart,
+  DataAnalysis,
+  Picture
+} from '@element-plus/icons-vue'
+import type { DashboardStats } from '@/types'
+
+const themeStore = useThemeStore()
+
+// 图表引用
+const userTrendChart = ref<HTMLElement>()
+const imageTrendChart = ref<HTMLElement>()
+
+// 图表实例
+let userChart: echarts.ECharts | null = null
+let imageChart: echarts.ECharts | null = null
+
+// 时间周期
+const userTrendPeriod = ref('7d')
+const imageTrendPeriod = ref('7d')
+
+// 统计数据
+const stats = ref([
+  {
+    key: 'totalUsers',
+    title: '总用户数',
+    value: '0',
+    change: '+0%',
+    changeType: 'increase',
+    icon: 'User',
+    color: '#409eff'
+  },
+  {
+    key: 'totalImages',
+    title: '总图片数',
+    value: '0',
+    change: '+0%',
+    changeType: 'increase',
+    icon: 'Picture',
+    color: '#67c23a'
+  },
+  {
+    key: 'todayImages',
+    title: '今日生成',
+    value: '0',
+    change: '+0%',
+    changeType: 'increase',
+    icon: 'TrendCharts',
+    color: '#e6a23c'
+  },
+  {
+    key: 'activeUsers',
+    title: '活跃用户',
+    value: '0',
+    change: '+0%',
+    changeType: 'increase',
+    icon: 'DataAnalysis',
+    color: '#f56c6c'
+  }
+])
+
+// 热门提示词
+const popularPrompts = ref<PopularPrompt[]>([])
+
+// 最新用户
+const recentUsers = ref<User[]>([])
+
+// 用户趋势数据
+const userTrendData = ref<TrendData[]>([])
+
+
+
+// 初始化用户趋势图表
+const initUserTrendChart = () => {
+  if (!userTrendChart.value) {
+    console.warn('用户趋势图表DOM元素未准备好')
+    return
+  }
+  
+  try {
+    // 如果图表已存在，先销毁
+    if (userChart) {
+      userChart.dispose()
+      userChart = null
+    }
+    
+    userChart = echarts.init(userTrendChart.value)
+    
+    const option = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross'
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: userTrendData.value.map((item) => item.date) || ['暂无数据']
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          name: '新增用户',
+          type: 'line',
+          smooth: true,
+          data: userTrendData.value.map((item) => item.count) || [0],
+          itemStyle: {
+            color: '#409eff'
+          },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
+              { offset: 1, color: 'rgba(64, 158, 255, 0.1)' }
+            ])
+          }
+        }
+      ]
+    }
+    
+    userChart.setOption(option)
+  } catch (error) {
+    console.error('用户趋势图表初始化失败:', error)
+  }
+}
+
+// 图片趋势数据
+const imageTrendData = ref<TrendData[]>([])
+
+// 初始化图片趋势图表
+const initImageTrendChart = () => {
+  if (!imageTrendChart.value) {
+    console.warn('图片趋势图表DOM元素未准备好')
+    return
+  }
+  
+  try {
+    // 如果图表已存在，先销毁
+    if (imageChart) {
+      imageChart.dispose()
+      imageChart = null
+    }
+    
+    imageChart = echarts.init(imageTrendChart.value)
+    
+    const option = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross'
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: imageTrendData.value.map((item) => item.date) || ['暂无数据']
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          name: '图片生成',
+          type: 'bar',
+          data: imageTrendData.value.map((item) => item.count) || [0],
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#67c23a' },
+              { offset: 1, color: '#85ce61' }
+            ])
+          }
+        }
+      ]
+    }
+    
+    imageChart.setOption(option)
+  } catch (error) {
+    console.error('图片趋势图表初始化失败:', error)
+  }
+}
+
+// 加载统计数据
+const loadStats = async () => {
+  try {
+    const response = await dashboardAPI.getStats()
+    if (response.success && response.data) {
+      const data = response.data
+      stats.value[0].value = data.totalUsers.toString()
+      stats.value[1].value = data.totalImages.toString()
+      stats.value[2].value = data.todayImages.toString()
+      stats.value[3].value = data.activeUsers.toString()
+    }
+  } catch (error) {
+    console.warn('统计数据加载失败，使用默认数据:', error)
+    // 在开发环境下，API失败时使用模拟数据
+    if (import.meta.env.DEV) {
+      stats.value[0].value = '156'
+      stats.value[1].value = '2,340'
+      stats.value[2].value = '45'
+      stats.value[3].value = '89'
+    }
+  }
+}
+
+// 加载用户趋势数据
+const loadUserTrend = async () => {
+  try {
+    const response = await dashboardAPI.getUserGrowthTrend(7)
+    if (response.success && response.data) {
+      userTrendData.value = response.data
+      nextTick(() => {
+        initUserTrendChart()
+      })
+    }
+  } catch (error) {
+    console.warn('用户趋势数据加载失败，使用模拟数据:', error)
+    // 在开发环境下，API失败时使用模拟数据
+    if (import.meta.env.DEV) {
+      userTrendData.value = [
+        { date: '01-15', count: 12 },
+        { date: '01-16', count: 19 },
+        { date: '01-17', count: 15 },
+        { date: '01-18', count: 23 },
+        { date: '01-19', count: 18 },
+        { date: '01-20', count: 25 },
+        { date: '01-21', count: 30 }
+      ]
+      nextTick(() => {
+        initUserTrendChart()
+      })
+    }
+  }
+}
+
+// 加载图片趋势数据
+const loadImageTrend = async () => {
+  try {
+    const response = await dashboardAPI.getImageGenerationTrend(7)
+    if (response.success && response.data) {
+      imageTrendData.value = response.data
+      nextTick(() => {
+        initImageTrendChart()
+      })
+    }
+  } catch (error) {
+    console.warn('图片趋势数据加载失败，使用模拟数据:', error)
+    // 在开发环境下，API失败时使用模拟数据
+    if (import.meta.env.DEV) {
+      imageTrendData.value = [
+        { date: '01-15', count: 45 },
+        { date: '01-16', count: 67 },
+        { date: '01-17', count: 52 },
+        { date: '01-18', count: 89 },
+        { date: '01-19', count: 73 },
+        { date: '01-20', count: 95 },
+        { date: '01-21', count: 112 }
+      ]
+      nextTick(() => {
+        initImageTrendChart()
+      })
+    }
+  }
+}
+
+// 加载热门提示词
+const loadPopularPrompts = async () => {
+  try {
+    const response = await dashboardAPI.getPopularPrompts(5)
+    if (response.success && response.data) {
+      popularPrompts.value = response.data
+    }
+  } catch (error) {
+    console.warn('热门提示词加载失败，使用模拟数据:', error)
+    // 在开发环境下，API失败时使用模拟数据
+    if (import.meta.env.DEV) {
+      popularPrompts.value = [
+        { id: 1, text: '美丽的山水画，有蓝天白云', count: 156 },
+        { id: 2, text: '可爱的小猫咪，毛茸茸的', count: 134 },
+        { id: 3, text: '现代建筑设计，简约风格', count: 98 },
+        { id: 4, text: '梦幻森林，阳光透过树叶', count: 87 },
+        { id: 5, text: '科技感十足的机器人', count: 76 }
+      ]
+    }
+  }
+}
+
+// 加载最新用户
+const loadRecentUsers = async () => {
+  try {
+    const response = await userAPI.getUsers({ page: 1, pageSize: 5 })
+    if (response.success && response.data && response.data.list) {
+      recentUsers.value = response.data.list.map((user: any) => ({
+        ...user,
+        status: 'active'
+      }))
+    }
+  } catch (error) {
+    console.warn('最新用户加载失败，使用模拟数据:', error)
+    // 在开发环境下，API失败时使用模拟数据
+    if (import.meta.env.DEV) {
+      recentUsers.value = [
+        { 
+          id: 1, 
+          username: 'user001', 
+          avatar: '', 
+          createdAt: new Date().toISOString(), 
+          status: 'active' 
+        },
+        { 
+          id: 2, 
+          username: 'designer123', 
+          avatar: '', 
+          createdAt: new Date(Date.now() - 86400000).toISOString(), 
+          status: 'active' 
+        },
+        { 
+          id: 3, 
+          username: 'artist456', 
+          avatar: '', 
+          createdAt: new Date(Date.now() - 172800000).toISOString(), 
+          status: 'active' 
+        }
+      ]
+    }
+  }
+}
+
+// 监听主题变化
+watch(
+  () => themeStore.isDark,
+  () => {
+    nextTick(() => {
+      if (userChart) {
+        userChart.dispose()
+        initUserTrendChart()
+      }
+      if (imageChart) {
+        imageChart.dispose()
+        initImageTrendChart()
+      }
+    })
+  }
+)
+
+// 监听窗口大小变化
+const handleResize = () => {
+  userChart?.resize()
+  imageChart?.resize()
+}
+
+// 生命周期
+onMounted(async () => {
+  try {
+    // 先等待DOM渲染完成
+    await nextTick()
+    
+    // 并行加载数据
+    await Promise.all([
+      loadStats(),
+      loadUserTrend(),
+      loadImageTrend(),
+      loadPopularPrompts(),
+      loadRecentUsers()
+    ])
+    
+    // 确保DOM完全渲染后再初始化图表
+    await nextTick()
+    
+    // 延迟一点时间确保图表容器已经渲染
+    setTimeout(() => {
+      initUserTrendChart()
+      initImageTrendChart()
+    }, 100)
+    
+    window.addEventListener('resize', handleResize)
+  } catch (error) {
+    console.error('Dashboard初始化失败:', error)
+  }
+})
+
+// 清理
+const cleanup = () => {
+  userChart?.dispose()
+  imageChart?.dispose()
+  window.removeEventListener('resize', handleResize)
+}
+
+// 组件卸载时清理
+import { onUnmounted } from 'vue'
+onUnmounted(cleanup)
+</script>
+
+<style scoped>
+.dashboard {
+  padding: var(--admin-padding-lg);
+  background: var(--el-bg-color-page);
+  min-height: 100%;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--admin-padding-lg);
+  margin-bottom: var(--admin-padding-xl);
+}
+
+.stat-card {
+  background: var(--el-bg-color);
+  border-radius: var(--admin-border-radius-lg);
+  padding: var(--admin-padding-lg);
+  box-shadow: var(--admin-box-shadow);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--admin-box-shadow-hover);
+}
+
+.stat-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-title {
+  font-size: 14px;
+  color: var(--el-text-color-regular);
+  margin: 0 0 8px 0;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 4px;
+}
+
+.stat-change {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.stat-change.increase {
+  color: var(--el-color-success);
+}
+
+.stat-change.decrease {
+  color: var(--el-color-danger);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--admin-padding-lg);
+  margin-bottom: var(--admin-padding-xl);
+}
+
+.chart-card {
+  background: var(--el-bg-color);
+  border-radius: var(--admin-border-radius-lg);
+  padding: var(--admin-padding-lg);
+  box-shadow: var(--admin-box-shadow);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--admin-padding-lg);
+}
+
+.chart-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.chart-content {
+  height: 300px;
+}
+
+.chart {
+  width: 100%;
+  height: 100%;
+}
+
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--admin-padding-lg);
+}
+
+.info-card {
+  background: var(--el-bg-color);
+  border-radius: var(--admin-border-radius-lg);
+  padding: var(--admin-padding-lg);
+  box-shadow: var(--admin-box-shadow);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--admin-padding-lg);
+  padding-bottom: var(--admin-padding-md);
+  border-bottom: 1px solid var(--el-border-color-light);
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.prompt-list,
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--admin-padding-md);
+}
+
+.prompt-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--admin-padding-sm);
+  border-radius: var(--admin-border-radius);
+  transition: background-color 0.3s ease;
+}
+
+.prompt-item:hover {
+  background: var(--el-fill-color-light);
+}
+
+.prompt-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+}
+
+.prompt-count {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  background: var(--el-fill-color);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: var(--admin-padding-md);
+  padding: var(--admin-padding-sm);
+  border-radius: var(--admin-border-radius);
+  transition: background-color 0.3s ease;
+}
+
+.user-item:hover {
+  background: var(--el-fill-color-light);
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  margin-bottom: 2px;
+}
+
+.user-time {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .charts-grid,
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    padding: var(--admin-padding-md);
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--admin-padding-md);
+  }
+  
+  .chart-content {
+    height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-header {
+    flex-direction: column;
+    gap: var(--admin-padding-sm);
+    align-items: flex-start;
+  }
+}
+</style>

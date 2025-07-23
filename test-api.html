@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 测试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { padding: 8px 16px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>用户管理 API 测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 管理员登录测试</h3>
+        <button onclick="testLogin()">测试登录</button>
+        <div id="login-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 获取用户列表测试</h3>
+        <button onclick="testGetUsers()">获取用户列表</button>
+        <div id="users-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 创建测试用户</h3>
+        <button onclick="createTestUsers()">创建测试用户</button>
+        <div id="create-users-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. 简单用户查询测试</h3>
+        <button onclick="testSimpleUsers()">测试用户查询</button>
+        <div id="simple-users-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. 健康检查</h3>
+        <button onclick="testHealth()">健康检查</button>
+        <div id="health-result" class="result"></div>
+    </div>
+
+    <script>
+        let authToken = '';
+        
+        async function testLogin() {
+            const resultDiv = document.getElementById('login-result');
+            resultDiv.innerHTML = '正在测试登录...';
+            
+            try {
+                const response = await fetch('http://localhost:5004/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'Huan',
+                        password: 'Huanst518'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    authToken = data.data.token;
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ 登录成功！<br>Token: ${authToken.substring(0, 50)}...`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ 登录失败: ${data.message}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 请求失败: ${error.message}`;
+            }
+        }
+        
+        async function testGetUsers() {
+            const resultDiv = document.getElementById('users-result');
+            
+            if (!authToken) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '❌ 请先登录获取 Token';
+                return;
+            }
+            
+            resultDiv.innerHTML = '正在获取用户列表...';
+            
+            try {
+                const response = await fetch('http://localhost:5004/admin/users?page=1&pageSize=10', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ 获取用户列表成功！<br>
+                        用户总数: ${data.data.total}<br>
+                        当前页: ${data.data.page}<br>
+                        用户列表: <pre>${JSON.stringify(data.data.list, null, 2)}</pre>`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ 获取失败: ${data.message}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 请求失败: ${error.message}`;
+            }
+        }
+        
+        async function createTestUsers() {
+            const resultDiv = document.getElementById('create-users-result');
+            resultDiv.innerHTML = '正在创建测试用户...';
+
+            try {
+                const response = await fetch('http://localhost:5004/api/create-test-users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ 测试用户创建成功！<br>
+                        总用户数: ${data.totalUsers}<br>
+                        消息: ${data.message}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ 创建失败: ${data.message}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 请求失败: ${error.message}`;
+            }
+        }
+
+        async function testSimpleUsers() {
+            const resultDiv = document.getElementById('simple-users-result');
+            resultDiv.innerHTML = '正在测试简单用户查询...';
+
+            try {
+                const response = await fetch('http://localhost:5004/api/test-users');
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ 简单用户查询成功！<br>
+                        用户数量: ${data.count}<br>
+                        用户列表: <pre>${JSON.stringify(data.data, null, 2)}</pre>`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ 查询失败: ${data.message}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 请求失败: ${error.message}`;
+            }
+        }
+
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = '正在检查健康状态...';
+
+            try {
+                const response = await fetch('http://localhost:5004/api/health');
+                const text = await response.text();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ 健康检查成功: ${text}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ 健康检查失败: ${response.status}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 请求失败: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

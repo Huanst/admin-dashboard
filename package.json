@@ -1,0 +1,38 @@
+{
+  "name": "admin-dashboard",
+  "version": "1.0.0",
+  "description": "后台管理系统 - 基于Vue3全家桶",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext vue,js,jsx,cjs,mjs --fix --ignore-path .gitignore",
+    "format": "prettier --write src/"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.8.2",
+    "dayjs": "^1.11.13",
+    "echarts": "^5.5.1",
+    "element-plus": "^2.9.6",
+    "nprogress": "^0.2.0",
+    "pinia": "^2.2.6",
+    "vue": "^3.5.13",
+    "vue-echarts": "^7.0.3",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/eslint-config-prettier": "^10.1.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-vue": "^9.31.0",
+    "prettier": "^3.4.2",
+    "unplugin-auto-import": "^0.18.4",
+    "unplugin-vue-components": "^0.27.4",
+    "vite": "^5.4.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

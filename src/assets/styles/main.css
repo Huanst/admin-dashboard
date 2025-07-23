@@ -1,0 +1,274 @@
+/* 主样式文件 */
+@import 'nprogress/nprogress.css';
+
+/* CSS变量定义 */
+:root {
+  /* 颜色变量 */
+  --admin-primary-color: #409eff;
+  --admin-success-color: #67c23a;
+  --admin-warning-color: #e6a23c;
+  --admin-danger-color: #f56c6c;
+  --admin-info-color: #909399;
+  
+  /* 布局变量 */
+  --admin-header-height: 60px;
+  --admin-sidebar-width: 240px;
+  --admin-sidebar-collapsed-width: 64px;
+  
+  /* 间距变量 */
+  --admin-padding-sm: 8px;
+  --admin-padding-md: 16px;
+  --admin-padding-lg: 24px;
+  --admin-padding-xl: 32px;
+  
+  /* 圆角变量 */
+  --admin-border-radius-sm: 4px;
+  --admin-border-radius-md: 6px;
+  --admin-border-radius-lg: 8px;
+  
+  /* 阴影变量 */
+  --admin-box-shadow-light: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+  --admin-box-shadow-base: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+  --admin-box-shadow-dark: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.12);
+}
+
+/* 全局样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--el-bg-color-page);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--el-border-color-light);
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--el-border-color);
+}
+
+/* NProgress样式自定义 */
+#nprogress .bar {
+  background: var(--admin-primary-color) !important;
+  height: 3px !important;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px var(--admin-primary-color), 0 0 5px var(--admin-primary-color) !important;
+}
+
+#nprogress .spinner-icon {
+  border-top-color: var(--admin-primary-color) !important;
+  border-left-color: var(--admin-primary-color) !important;
+}
+
+/* 工具类 */
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-auto {
+  overflow: auto;
+}
+
+/* 间距工具类 */
+.m-0 { margin: 0; }
+.m-1 { margin: var(--admin-padding-sm); }
+.m-2 { margin: var(--admin-padding-md); }
+.m-3 { margin: var(--admin-padding-lg); }
+.m-4 { margin: var(--admin-padding-xl); }
+
+.p-0 { padding: 0; }
+.p-1 { padding: var(--admin-padding-sm); }
+.p-2 { padding: var(--admin-padding-md); }
+.p-3 { padding: var(--admin-padding-lg); }
+.p-4 { padding: var(--admin-padding-xl); }
+
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: var(--admin-padding-sm); }
+.mt-2 { margin-top: var(--admin-padding-md); }
+.mt-3 { margin-top: var(--admin-padding-lg); }
+.mt-4 { margin-top: var(--admin-padding-xl); }
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: var(--admin-padding-sm); }
+.mb-2 { margin-bottom: var(--admin-padding-md); }
+.mb-3 { margin-bottom: var(--admin-padding-lg); }
+.mb-4 { margin-bottom: var(--admin-padding-xl); }
+
+.ml-0 { margin-left: 0; }
+.ml-1 { margin-left: var(--admin-padding-sm); }
+.ml-2 { margin-left: var(--admin-padding-md); }
+.ml-3 { margin-left: var(--admin-padding-lg); }
+.ml-4 { margin-left: var(--admin-padding-xl); }
+
+.mr-0 { margin-right: 0; }
+.mr-1 { margin-right: var(--admin-padding-sm); }
+.mr-2 { margin-right: var(--admin-padding-md); }
+.mr-3 { margin-right: var(--admin-padding-lg); }
+.mr-4 { margin-right: var(--admin-padding-xl); }
+
+/* 响应式工具类 */
+@media (max-width: 768px) {
+  .hidden-sm {
+    display: none !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .hidden-md {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .hidden-lg {
+    display: none !important;
+  }
+}
+
+/* 动画类 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+/* 卡片样式 */
+.admin-card {
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: var(--admin-border-radius-lg);
+  box-shadow: var(--admin-box-shadow-light);
+  padding: var(--admin-padding-lg);
+  transition: box-shadow 0.3s ease;
+}
+
+.admin-card:hover {
+  box-shadow: var(--admin-box-shadow-base);
+}
+
+/* 表格样式增强 */
+.el-table {
+  border-radius: var(--admin-border-radius-md);
+  overflow: hidden;
+}
+
+.el-table .el-table__header-wrapper {
+  border-radius: var(--admin-border-radius-md) var(--admin-border-radius-md) 0 0;
+}
+
+/* 按钮样式增强 */
+.el-button {
+  border-radius: var(--admin-border-radius-sm);
+  transition: all 0.3s ease;
+}
+
+.el-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 输入框样式增强 */
+.el-input__wrapper {
+  border-radius: var(--admin-border-radius-sm);
+  transition: all 0.3s ease;
+}
+
+.el-input__wrapper:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 暗色主题适配 */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark .admin-card {
+  background: var(--el-bg-color);
+  border-color: var(--el-border-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .admin-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
