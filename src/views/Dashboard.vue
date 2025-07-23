@@ -213,6 +213,10 @@ const initUserTrendChart = () => {
         trigger: 'axis',
         axisPointer: {
           type: 'cross'
+        },
+        formatter: (params: any) => {
+          const data = params[0]
+          return `${data.axisValue}<br/>新增用户: ${data.value}人`
         }
       },
       grid: {
@@ -223,10 +227,31 @@ const initUserTrendChart = () => {
       },
       xAxis: {
         type: 'category',
-        data: userTrendData.value.map((item) => item.date) || ['暂无数据']
+        data: userTrendData.value.map((item) => item.date) || ['暂无数据'],
+        axisLabel: {
+          color: themeStore.isDark ? '#a3a6ad' : '#606266'
+        },
+        axisLine: {
+          lineStyle: {
+            color: themeStore.isDark ? '#4c4d4f' : '#dcdfe6'
+          }
+        }
       },
       yAxis: {
-        type: 'value'
+        type: 'value',
+        axisLabel: {
+          color: themeStore.isDark ? '#a3a6ad' : '#606266'
+        },
+        axisLine: {
+          lineStyle: {
+            color: themeStore.isDark ? '#4c4d4f' : '#dcdfe6'
+          }
+        },
+        splitLine: {
+          lineStyle: {
+            color: themeStore.isDark ? '#4c4d4f' : '#f0f2f5'
+          }
+        }
       },
       series: [
         {
@@ -237,11 +262,19 @@ const initUserTrendChart = () => {
           itemStyle: {
             color: '#409eff'
           },
+          lineStyle: {
+            width: 3
+          },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
               { offset: 1, color: 'rgba(64, 158, 255, 0.1)' }
             ])
+          },
+          emphasis: {
+            itemStyle: {
+              color: '#337ecc'
+            }
           }
         }
       ]
@@ -277,6 +310,10 @@ const initImageTrendChart = () => {
         trigger: 'axis',
         axisPointer: {
           type: 'cross'
+        },
+        formatter: (params: any) => {
+          const data = params[0]
+          return `${data.axisValue}<br/>图片生成: ${data.value}张`
         }
       },
       grid: {
@@ -287,10 +324,31 @@ const initImageTrendChart = () => {
       },
       xAxis: {
         type: 'category',
-        data: imageTrendData.value.map((item) => item.date) || ['暂无数据']
+        data: imageTrendData.value.map((item) => item.date) || ['暂无数据'],
+        axisLabel: {
+          color: themeStore.isDark ? '#a3a6ad' : '#606266'
+        },
+        axisLine: {
+          lineStyle: {
+            color: themeStore.isDark ? '#4c4d4f' : '#dcdfe6'
+          }
+        }
       },
       yAxis: {
-        type: 'value'
+        type: 'value',
+        axisLabel: {
+          color: themeStore.isDark ? '#a3a6ad' : '#606266'
+        },
+        axisLine: {
+          lineStyle: {
+            color: themeStore.isDark ? '#4c4d4f' : '#dcdfe6'
+          }
+        },
+        splitLine: {
+          lineStyle: {
+            color: themeStore.isDark ? '#4c4d4f' : '#f0f2f5'
+          }
+        }
       },
       series: [
         {
@@ -302,6 +360,14 @@ const initImageTrendChart = () => {
               { offset: 0, color: '#67c23a' },
               { offset: 1, color: '#85ce61' }
             ])
+          },
+          emphasis: {
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#529b2e' },
+                { offset: 1, color: '#67c23a' }
+              ])
+            }
           }
         }
       ]
@@ -315,19 +381,25 @@ const initImageTrendChart = () => {
 
 // 加载统计数据
 const loadStats = async () => {
+  console.log('开始加载统计数据...')
   try {
     const response = await dashboardAPI.getStats()
+    console.log('统计数据API响应:', response)
     if (response.success && response.data) {
       const data = response.data
+      console.log('统计数据加载成功:', data)
       stats.value[0].value = data.totalUsers.toString()
       stats.value[1].value = data.totalImages.toString()
       stats.value[2].value = data.todayImages.toString()
       stats.value[3].value = data.activeUsers.toString()
+    } else {
+      console.warn('统计数据API返回失败:', response)
     }
   } catch (error) {
-    console.warn('统计数据加载失败，使用默认数据:', error)
+    console.error('统计数据加载失败，使用默认数据:', error)
     // 在开发环境下，API失败时使用模拟数据
     if (import.meta.env.DEV) {
+      console.log('使用模拟统计数据')
       stats.value[0].value = '156'
       stats.value[1].value = '2,340'
       stats.value[2].value = '45'
@@ -337,11 +409,46 @@ const loadStats = async () => {
 }
 
 // 加载用户趋势数据
-const loadUserTrend = async () => {
+const loadUserTrend = async (period = userTrendPeriod.value) => {
   try {
-    const response = await dashboardAPI.getUserGrowthTrend(7)
+    // 根据周期转换为天数
+    const days = period === '7d' ? 7 : period === '30d' ? 30 : 90
+    console.log(`加载用户趋势数据，周期: ${period}, 天数: ${days}`)
+
+    const response = await dashboardAPI.getUserGrowthTrend(days)
+    console.log('用户趋势API响应:', response)
+
     if (response.success && response.data) {
-      userTrendData.value = response.data
+      // 处理不同的数据格式
+      let trendData = response.data
+
+      // 如果数据是嵌套格式（来自statsController），提取trend数组
+      if (response.data.trend && Array.isArray(response.data.trend)) {
+        trendData = response.data.trend
+        console.log('检测到嵌套数据格式，提取trend数组')
+      }
+
+      // 确保trendData是数组
+      if (!Array.isArray(trendData)) {
+        console.warn('用户趋势数据格式不正确，期望数组格式:', trendData)
+        trendData = []
+      }
+
+      // 格式化日期显示
+      userTrendData.value = trendData.map(item => ({
+        ...item,
+        date: formatDateForChart(item.date, period)
+      }))
+
+      console.log('用户趋势数据加载成功:', userTrendData.value)
+
+      nextTick(() => {
+        initUserTrendChart()
+      })
+    } else {
+      console.warn('用户趋势API返回失败:', response)
+      // 使用模拟数据
+      userTrendData.value = generateMockUserTrendData(period)
       nextTick(() => {
         initUserTrendChart()
       })
@@ -350,15 +457,7 @@ const loadUserTrend = async () => {
     console.warn('用户趋势数据加载失败，使用模拟数据:', error)
     // 在开发环境下，API失败时使用模拟数据
     if (import.meta.env.DEV) {
-      userTrendData.value = [
-        { date: '01-15', count: 12 },
-        { date: '01-16', count: 19 },
-        { date: '01-17', count: 15 },
-        { date: '01-18', count: 23 },
-        { date: '01-19', count: 18 },
-        { date: '01-20', count: 25 },
-        { date: '01-21', count: 30 }
-      ]
+      userTrendData.value = generateMockUserTrendData(period)
       nextTick(() => {
         initUserTrendChart()
       })
@@ -367,33 +466,115 @@ const loadUserTrend = async () => {
 }
 
 // 加载图片趋势数据
-const loadImageTrend = async () => {
+const loadImageTrend = async (period = imageTrendPeriod.value) => {
   try {
-    const response = await dashboardAPI.getImageGenerationTrend(7)
+    // 根据周期转换为天数
+    const days = period === '7d' ? 7 : period === '30d' ? 30 : 90
+    console.log(`加载图片趋势数据，周期: ${period}, 天数: ${days}`)
+
+    const response = await dashboardAPI.getImageGenerationTrend(days)
+    console.log('图片趋势API响应:', response)
+
     if (response.success && response.data) {
-      imageTrendData.value = response.data
+      // 处理不同的数据格式
+      let trendData = response.data
+
+      // 如果数据是嵌套格式（来自statsController），提取trend数组
+      if (response.data.trend && Array.isArray(response.data.trend)) {
+        trendData = response.data.trend
+        console.log('检测到嵌套数据格式，提取trend数组')
+      }
+
+      // 确保trendData是数组
+      if (!Array.isArray(trendData)) {
+        console.warn('图片趋势数据格式不正确，期望数组格式:', trendData)
+        trendData = []
+      }
+
+      // 格式化日期显示
+      imageTrendData.value = trendData.map(item => ({
+        ...item,
+        date: formatDateForChart(item.date, period)
+      }))
+
+      console.log('图片趋势数据加载成功:', imageTrendData.value)
+
+      nextTick(() => {
+        initImageTrendChart()
+      })
+    } else {
+      console.warn('图片趋势API返回失败:', response)
+      // 使用模拟数据
+      imageTrendData.value = generateMockImageTrendData(period)
       nextTick(() => {
         initImageTrendChart()
       })
     }
   } catch (error) {
-    console.warn('图片趋势数据加载失败，使用模拟数据:', error)
+    console.error('图片趋势数据加载失败，使用模拟数据:', error)
     // 在开发环境下，API失败时使用模拟数据
     if (import.meta.env.DEV) {
-      imageTrendData.value = [
-        { date: '01-15', count: 45 },
-        { date: '01-16', count: 67 },
-        { date: '01-17', count: 52 },
-        { date: '01-18', count: 89 },
-        { date: '01-19', count: 73 },
-        { date: '01-20', count: 95 },
-        { date: '01-21', count: 112 }
-      ]
+      console.log('使用模拟图片趋势数据')
+      imageTrendData.value = generateMockImageTrendData(period)
       nextTick(() => {
         initImageTrendChart()
       })
     }
   }
+}
+
+// 格式化图表日期显示
+const formatDateForChart = (dateStr: string, period: string) => {
+  const date = new Date(dateStr)
+
+  if (period === '7d') {
+    // 7天显示 MM-DD 格式
+    return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  } else if (period === '30d') {
+    // 30天显示 MM-DD 格式
+    return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  } else {
+    // 90天显示 MM-DD 格式
+    return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  }
+}
+
+// 生成模拟图片趋势数据
+const generateMockImageTrendData = (period: string) => {
+  const days = period === '7d' ? 7 : period === '30d' ? 30 : 90
+  const data = []
+
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date()
+    date.setDate(date.getDate() - i)
+    const dateStr = date.toISOString().split('T')[0]
+
+    data.push({
+      date: formatDateForChart(dateStr, period),
+      count: Math.floor(Math.random() * 50) + 10 // 随机生成10-60之间的数字
+    })
+  }
+
+  return data
+}
+
+// 生成模拟用户趋势数据
+const generateMockUserTrendData = (period: string) => {
+  const days = period === '7d' ? 7 : period === '30d' ? 30 : 90
+  const data = []
+
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date()
+    date.setDate(date.getDate() - i)
+    const dateStr = date.toISOString().split('T')[0]
+
+    data.push({
+      date: formatDateForChart(dateStr, period),
+      count: Math.floor(Math.random() * 20) + 5 // 随机生成5-25之间的数字
+    })
+  }
+
+  return data
 }
 
 // 加载热门提示词
@@ -458,6 +639,18 @@ const loadRecentUsers = async () => {
     }
   }
 }
+
+// 监听图片趋势周期变化
+watch(imageTrendPeriod, (newPeriod) => {
+  console.log('图片趋势周期变化:', newPeriod)
+  loadImageTrend(newPeriod)
+})
+
+// 监听用户趋势周期变化
+watch(userTrendPeriod, (newPeriod) => {
+  console.log('用户趋势周期变化:', newPeriod)
+  loadUserTrend(newPeriod)
+})
 
 // 监听主题变化
 watch(
