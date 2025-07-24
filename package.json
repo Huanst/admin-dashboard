@@ -4,8 +4,9 @@
   "description": "后台管理系统 - 基于Vue3全家桶",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --mode development",
+    "build": "vite build --mode production",
+    "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint . --ext vue,js,jsx,cjs,mjs --fix --ignore-path .gitignore",
     "format": "prettier --write src/"

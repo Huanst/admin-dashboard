@@ -111,6 +111,8 @@
           @selection-change="handleSelectionChange"
           stripe
           border
+          :height="600"
+          style="width: 100%"
         >
           <el-table-column type="selection" width="55" align="center" />
           
@@ -625,6 +627,28 @@ onMounted(() => {
 .table-section {
   background: var(--el-bg-color);
   border-radius: var(--admin-border-radius-lg);
+  overflow: hidden;
+}
+
+/* 表格滚动条样式 */
+.el-table .el-table__body-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.el-table .el-table__body-wrapper::-webkit-scrollbar-track {
+  background: var(--el-fill-color-lighter);
+  border-radius: 4px;
+}
+
+.el-table .el-table__body-wrapper::-webkit-scrollbar-thumb {
+  background: var(--el-fill-color-dark);
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.el-table .el-table__body-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--el-color-primary);
 }
 
 .table-toolbar {
@@ -703,7 +727,9 @@ onMounted(() => {
 
 /* 网格视图样式 */
 .grid-view {
-  min-height: 400px;
+  height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
 .image-grid {
@@ -711,6 +737,26 @@ onMounted(() => {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--admin-padding-lg);
   margin-bottom: var(--admin-padding-lg);
+}
+
+/* 自定义滚动条样式 */
+.grid-view::-webkit-scrollbar {
+  width: 8px;
+}
+
+.grid-view::-webkit-scrollbar-track {
+  background: var(--el-fill-color-lighter);
+  border-radius: 4px;
+}
+
+.grid-view::-webkit-scrollbar-thumb {
+  background: var(--el-fill-color-dark);
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.grid-view::-webkit-scrollbar-thumb:hover {
+  background: var(--el-color-primary);
 }
 
 .image-card {
@@ -819,31 +865,55 @@ onMounted(() => {
   .images-list {
     padding: var(--admin-padding-md);
   }
-  
+
   .page-header {
     flex-direction: column;
     gap: var(--admin-padding-md);
   }
-  
+
   .header-right {
     align-self: stretch;
   }
-  
+
   .table-toolbar {
     flex-direction: column;
     gap: var(--admin-padding-md);
     align-items: stretch;
   }
-  
+
   .image-grid {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: var(--admin-padding-md);
+  }
+
+  .grid-view {
+    height: 500px;
+    padding-right: 4px;
+  }
+
+  .el-table {
+    font-size: 12px;
   }
 }
 
 @media (max-width: 480px) {
   .image-grid {
     grid-template-columns: 1fr;
+  }
+
+  .grid-view {
+    height: 450px;
+    padding-right: 2px;
+  }
+
+  /* 移动端滚动条更细 */
+  .grid-view::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .el-table .el-table__body-wrapper::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
   }
 }
 </style>

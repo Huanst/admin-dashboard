@@ -23,8 +23,33 @@ export const formatDate = (date, format = 'YYYY-MM-DD HH:mm:ss') => {
  * @returns {string} 相对时间字符串
  */
 export const getRelativeTime = (date) => {
-  // 使用本地时区计算相对时间（浏览器会自动处理时区转换）
-  return dayjs(date).fromNow()
+  // 统一处理时间格式，确保相同日期显示相同的相对时间
+  const inputDate = dayjs(date)
+  const now = dayjs()
+
+  // 计算日期差异（只考虑日期，不考虑具体时间）
+  const startOfInputDate = inputDate.startOf('day')
+  const startOfToday = now.startOf('day')
+  const daysDiff = startOfToday.diff(startOfInputDate, 'day')
+
+  if (daysDiff === 0) {
+    return '今天'
+  } else if (daysDiff === 1) {
+    return '1天前'
+  } else if (daysDiff === 2) {
+    return '2天前'
+  } else if (daysDiff < 7) {
+    return `${daysDiff}天前`
+  } else if (daysDiff < 30) {
+    const weeks = Math.floor(daysDiff / 7)
+    return `${weeks}周前`
+  } else if (daysDiff < 365) {
+    const months = Math.floor(daysDiff / 30)
+    return `${months}个月前`
+  } else {
+    const years = Math.floor(daysDiff / 365)
+    return `${years}年前`
+  }
 }
 
 /**

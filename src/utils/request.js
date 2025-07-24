@@ -8,7 +8,7 @@ import router from '@/router'
  * 基于新的API文档配置
  */
 const request = axios.create({
-  baseURL: 'http://localhost:5004/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5004/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -99,7 +99,7 @@ request.interceptors.response.use(
  * 用于访问不带 /api 前缀的管理员接口
  */
 const adminRequest = axios.create({
-  baseURL: 'http://localhost:5004',
+  baseURL: import.meta.env.VITE_API_SERVER_URL || 'http://localhost:5004',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

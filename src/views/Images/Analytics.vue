@@ -158,7 +158,7 @@
               <div class="generation-prompt">{{ generation.prompt }}</div>
               <div class="generation-meta">
                 <span>用户: {{ generation.username || generation.userId }}</span>
-                <span>{{ formatRelativeTime(generation.createdAt) }}</span>
+                <span>{{ getRelativeTime(generation.createdAt) }}</span>
               </div>
             </div>
           </div>
@@ -175,7 +175,7 @@ import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import { useThemeStore } from '@/stores/theme'
 import { dashboardAPI, imageAPI, analyticsAPI } from '@/utils/api'
-import { formatRelativeTime, downloadFile } from '@/utils'
+import { getRelativeTime, downloadFile } from '@/utils'
 import {
   Refresh,
   TrendCharts,
