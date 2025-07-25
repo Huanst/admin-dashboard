@@ -82,12 +82,12 @@
             <div class="stat-label">今日生成</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">{{ user.stats?.totalTokens || 0 }}</div>
-            <div class="stat-label">消耗积分</div>
+            <div class="stat-value">{{ user.stats?.weekImages || 0 }}</div>
+            <div class="stat-label">本周生成</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">{{ user.stats?.remainingTokens || 0 }}</div>
-            <div class="stat-label">剩余积分</div>
+            <div class="stat-value">{{ user.stats?.totalTokens || 0 }}</div>
+            <div class="stat-label">累计积分</div>
           </div>
         </div>
       </el-card>
@@ -147,7 +147,10 @@ const loading = ref(true)
 const user = ref(null)
 const activities = ref([])
 
-const userId = Number(route.params.id)
+// 改进用户ID验证逻辑
+const userId = route.params.id
+const numericUserId = parseInt(userId, 10)
+const isValidUserId = userId && !isNaN(numericUserId) && numericUserId > 0
 
 const goBack = () => {
   router.go(-1)
@@ -183,26 +186,37 @@ const getActivityColor = (type) => {
 const loadUserDetail = async () => {
   try {
     loading.value = true
-    const response = await userAPI.getUserDetail(userId)
-    user.value = response.data
-    
-    // 模拟活动数据
-    activities.value = [
-      {
-        id: 1,
-        type: 'login',
-        title: '用户登录',
-        description: '从 192.168.1.100 登录系统',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        type: 'generate',
-        title: '生成图片',
-        description: '使用提示词"美丽的风景"生成了一张图片',
-        createdAt: new Date(Date.now() - 3600000).toISOString()
+
+    // 并行加载用户详情和活动记录
+    const [userResponse, activitiesResponse] = await Promise.all([
+      userAPI.getUserDetail(numericUserId),
+      userAPI.getUserActivities(numericUserId, { page: 1, limit: 10 })
+    ])
+
+    const userData = userResponse.data
+    user.value = {
+      ...userData,
+      // 格式化字段名以匹配模板
+      createdAt: userData.created_at,
+      lastLoginAt: userData.last_login,
+      stats: {
+        totalImages: userData.image_count || 0,
+        todayImages: userData.today_images || 0,
+        weekImages: userData.week_images || 0,
+        totalTokens: userData.total_points || 0,
+        remainingTokens: userData.user_points || 0
       }
-    ]
+    }
+
+    // 格式化活动数据
+    activities.value = activitiesResponse.data.activities.map(activity => ({
+      id: activity.activity_id,
+      type: activity.type,
+      title: activity.title,
+      description: activity.description,
+      createdAt: activity.created_at
+    }))
+
   } catch (error) {
     console.error('加载用户详情失败:', error)
     ElMessage.error('加载用户详情失败')
@@ -227,7 +241,7 @@ const deleteUser = async () => {
       }
     )
     
-    await userAPI.deleteUser(userId)
+    await userAPI.deleteUser(numericUserId)
     ElMessage.success('删除成功')
     router.push('/users')
   } catch (error) {
@@ -238,15 +252,30 @@ const deleteUser = async () => {
   }
 }
 
-const refreshActivity = () => {
-  ElMessage.success('活动记录已刷新')
-  loadUserDetail()
+const refreshActivity = async () => {
+  try {
+    const activitiesResponse = await userAPI.getUserActivities(numericUserId, { page: 1, limit: 10 })
+    activities.value = activitiesResponse.data.activities.map(activity => ({
+      id: activity.activity_id,
+      type: activity.type,
+      title: activity.title,
+      description: activity.description,
+      createdAt: activity.created_at
+    }))
+    ElMessage.success('活动记录已刷新')
+  } catch (error) {
+    console.error('刷新活动记录失败:', error)
+    ElMessage.error('刷新活动记录失败')
+  }
 }
 
 onMounted(() => {
-  if (userId) {
+  console.log('路由参数 userId:', userId, '转换后的数字ID:', numericUserId, '是否有效:', isValidUserId)
+
+  if (isValidUserId) {
     loadUserDetail()
   } else {
+    console.error('无效的用户ID:', userId, '转换后:', numericUserId)
     ElMessage.error('用户ID无效')
     router.push('/users')
   }

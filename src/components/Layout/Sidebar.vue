@@ -35,7 +35,7 @@
             <el-icon><User /></el-icon>
             <span>用户管理</span>
           </template>
-          <el-menu-item index="/users/list">
+          <el-menu-item index="/users">
             <el-icon><List /></el-icon>
             <template #title>用户列表</template>
           </el-menu-item>
@@ -106,10 +106,11 @@ const themeStore = useThemeStore()
 // 当前激活的菜单项
 const activeMenu = computed(() => {
   const path = route.path
-  
+
   // 根据路径匹配对应的菜单项
   if (path.startsWith('/users')) {
-    return '/users/list'
+    // 如果是用户详情页面，仍然高亮用户列表菜单
+    return '/users'
   } else if (path.startsWith('/images')) {
     if (path.includes('analytics')) {
       return '/images/analytics'
@@ -121,7 +122,7 @@ const activeMenu = computed(() => {
     }
     return '/system/config'
   }
-  
+
   return '/dashboard'
 })
 </script>

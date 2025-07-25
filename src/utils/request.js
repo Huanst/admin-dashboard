@@ -111,12 +111,6 @@ adminRequest.interceptors.request.use(
   (config) => {
     // 添加认证token
     const authStore = useAuthStore()
-    console.log('管理员请求拦截器:', {
-      url: config.url,
-      hasToken: !!authStore.token,
-      token: authStore.token ? authStore.token.substring(0, 20) + '...' : '无token'
-    })
-
     if (authStore.token) {
       config.headers = config.headers || {}
       config.headers.Authorization = `Bearer ${authStore.token}`

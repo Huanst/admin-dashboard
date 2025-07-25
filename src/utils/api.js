@@ -103,6 +103,17 @@ export const userAPI = {
    */
   batchDeleteUsers(userIds) {
     return adminRequest.post('/admin/users/batch-delete', { userIds })
+  },
+
+  /**
+   * 获取用户活动记录
+   * @param {number} id - 用户ID
+   * @param {Object} params - 查询参数
+   * @param {number} params.page - 页码 (默认: 1)
+   * @param {number} params.limit - 每页数量 (默认: 20)
+   */
+  getUserActivities(id, params = {}) {
+    return adminRequest.get(`/api/users/${id}/activities`, { params })
   }
 }
 
