@@ -102,7 +102,7 @@
           <el-table-column label="用户信息" min-width="200">
             <template #default="{ row }">
               <div class="user-info">
-                <el-avatar :size="32" :src="row.avatar">
+                <el-avatar :size="32" :src="getImageUrl(row.avatar)">
                   <el-icon><UserIcon /></el-icon>
                 </el-avatar>
                 <div class="user-details">
@@ -201,7 +201,7 @@
     >
       <div v-if="currentUser" class="user-detail">
         <div class="detail-header">
-          <el-avatar :size="64" :src="currentUser.avatar">
+          <el-avatar :size="64" :src="getImageUrl(currentUser.avatar)">
             <el-icon><UserIcon /></el-icon>
           </el-avatar>
           <div class="user-basic">
@@ -507,6 +507,13 @@ const handleBatchDelete = async () => {
       console.error('批量删除失败:', error)
     }
   }
+}
+
+// 获取完整的图片URL
+const getImageUrl = (url) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return `http://localhost:5004${url}`
 }
 
 // 初始化

@@ -236,9 +236,11 @@
               </div>
               
               <!-- 图片 -->
-              <div class="card-image" @click="previewImage(image)">
+              <div class="card-image">
                 <el-image
                   :src="getImageUrl(image.url || image.thumbnail)"
+                  :preview-src-list="[getImageUrl(image.url || image.thumbnail)]"
+                  :preview-teleported="true"
                   fit="cover"
                   class="grid-img"
                 >
@@ -251,7 +253,7 @@
               </div>
               
               <!-- 信息 -->
-              <div class="card-info">
+              <div class="card-info" @click="handleCardClick(image)" title="点击查看3D效果">
                 <div class="card-title">{{ image.title || `ID: ${image.id}` }}</div>
                 <div class="card-user">用户: {{ image.user?.username || image.username || image.user?.id || image.user_id || '未知' }}</div>
                 <div class="card-prompt">{{ image.prompt || '无提示词' }}</div>
@@ -802,6 +804,13 @@ onMounted(() => {
 
 .card-info {
   padding: var(--admin-padding-md);
+  transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s ease;
+  cursor: pointer;
+  border-radius: 0 0 var(--admin-border-radius-lg) var(--admin-border-radius-lg);
+}
+
+.card-info:hover {
+  background: rgba(64, 158, 255, 0.05);
 }
 
 .card-title {
