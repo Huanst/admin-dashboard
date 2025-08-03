@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request, { adminRequest } from '@/utils/request'
 
 /**
  * 仪表盘API
@@ -7,9 +7,12 @@ import request from '@/utils/request'
 export const dashboardAPI = {
   /**
    * 获取系统统计数据
+   * @param {boolean} includeChanges - 是否包含变化数据 (默认: true)
    */
-  getStats() {
-    return request.get('/dashboard/stats')
+  getStats(includeChanges = true) {
+    return adminRequest.get('/admin/dashboard/stats', {
+      params: { includeChanges }
+    })
   },
 
   /**
@@ -17,7 +20,7 @@ export const dashboardAPI = {
    * @param {number} days - 天数 (默认: 7)
    */
   getUserGrowthTrend(days = 7) {
-    return request.get('/dashboard/user-growth-trend', {
+    return adminRequest.get('/admin/dashboard/user-growth', {
       params: { days }
     })
   },
@@ -27,7 +30,7 @@ export const dashboardAPI = {
    * @param {number} days - 天数 (默认: 7)
    */
   getImageGenerationTrend(days = 7) {
-    return request.get('/dashboard/image-generation-trend', {
+    return adminRequest.get('/admin/dashboard/image-trends', {
       params: { days }
     })
   },
@@ -37,7 +40,7 @@ export const dashboardAPI = {
    * @param {number} limit - 限制数量 (默认: 5)
    */
   getPopularPrompts(limit = 5) {
-    return request.get('/dashboard/popular-prompts', {
+    return adminRequest.get('/admin/dashboard/popular-prompts', {
       params: { limit }
     })
   }

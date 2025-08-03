@@ -53,11 +53,29 @@ const routes = [
         }
       },
       {
+        path: '/users/create',
+        name: 'UserCreate',
+        component: () => import('@/views/users/Create.vue'),
+        meta: {
+          title: '创建用户',
+          icon: 'User'
+        }
+      },
+      {
         path: '/users/:id',
         name: 'UserDetail',
-        component: () => import('@/views/Users/Detail.vue'),
+        component: () => import('@/views/users/Detail.vue'),
         meta: {
           title: '用户详情',
+          icon: 'User'
+        }
+      },
+      {
+        path: '/profile',
+        name: 'Profile',
+        component: () => import('@/views/Profile/index.vue'),
+        meta: {
+          title: '个人资料',
           icon: 'User'
         }
       },
@@ -95,6 +113,24 @@ const routes = [
         meta: {
           title: '系统设置',
           icon: 'Setting'
+        }
+      },
+      {
+        path: '/system/config',
+        name: 'SystemConfig',
+        component: () => import('@/views/System/Config.vue'),
+        meta: {
+          title: '系统配置',
+          icon: 'Tools'
+        }
+      },
+      {
+        path: '/system/logs',
+        name: 'SystemLogs',
+        component: () => import('@/views/System/Logs.vue'),
+        meta: {
+          title: '系统日志',
+          icon: 'Document'
         }
       }
     ]

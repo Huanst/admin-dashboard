@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed, readonly } from 'vue'
 import { authAPI } from '@/api/auth'
 import { ElMessage } from 'element-plus'
+import router from '@/router'
 
 /**
  * 认证状态管理
@@ -80,8 +81,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * 用户登出
+   * @param {boolean} showMessage - 是否显示退出消息
+   * @param {boolean} redirectToLogin - 是否跳转到登录页面
    */
-  const logout = () => {
+  const logout = (showMessage = true, redirectToLogin = false) => {
     token.value = null
     user.value = null
     
@@ -89,7 +92,14 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('admin_token')
     localStorage.removeItem('admin_user')
     
-    ElMessage.info('已退出登录')
+    if (showMessage) {
+      ElMessage.info('已退出登录')
+    }
+    
+    // 如果需要跳转到登录页面且当前不在登录页面
+    if (redirectToLogin && router.currentRoute.value.path !== '/login') {
+      router.push('/login')
+    }
   }
 
   /**
@@ -131,8 +141,8 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       console.error('获取用户信息失败:', error)
       // 如果获取用户信息失败，可能token已过期
-      if (error.response?.status === 401) {
-        logout()
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        logout(false, true) // 不显示消息，直接跳转到登录页面
       }
     }
     return null

@@ -394,7 +394,15 @@ const loadConfig = async () => {
   try {
     const response = await systemAPI.getConfig()
     if (response.success && response.data) {
-      Object.assign(config, response.data)
+      // 将后端配置映射到前端配置结构
+      const backendConfig = response.data
+
+      // 更新基础配置
+      if (backendConfig.systemName) config.basic.systemName = backendConfig.systemName
+      if (backendConfig.version) config.basic.version = backendConfig.version
+      if (backendConfig.adminEmail) config.basic.adminEmail = backendConfig.adminEmail
+
+      // 更新其他配置...
       originalConfig.value = JSON.parse(JSON.stringify(config))
     }
   } catch (error) {

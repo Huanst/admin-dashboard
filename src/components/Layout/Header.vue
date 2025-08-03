@@ -154,9 +154,11 @@ const handleCommand = async (command: string) => {
   switch (command) {
     case 'profile':
       // 跳转到个人资料页面
+      router.push('/profile')
       break
     case 'settings':
       // 跳转到账户设置页面
+      router.push('/profile')
       break
     case 'logout':
       try {

@@ -7,6 +7,10 @@
         <p class="page-description">管理系统中的所有用户信息</p>
       </div>
       <div class="header-right">
+        <el-button type="success" @click="createUser">
+          <el-icon><Plus /></el-icon>
+          创建用户
+        </el-button>
         <el-button type="primary" @click="handleRefresh">
           <el-icon><Refresh /></el-icon>
           刷新
@@ -283,87 +287,50 @@ const pagination = reactive({
 const loadUserList = async () => {
   loading.value = true
   try {
+    // 构建查询参数，过滤掉空值
     const params = {
       page: pagination.page,
-      pageSize: pagination.pageSize,
-      ...searchForm
+      pageSize: pagination.pageSize
+    }
+    
+    // 只添加非空的搜索参数
+    if (searchForm.username && searchForm.username.trim()) {
+      params.username = searchForm.username.trim()
+    }
+    if (searchForm.email && searchForm.email.trim()) {
+      params.email = searchForm.email.trim()
+    }
+    if (searchForm.status) {
+      params.status = searchForm.status
     }
 
+    console.log('前端发送搜索请求，参数:', params)
+    console.log('搜索表单数据:', searchForm)
+    
     const response = await userAPI.getUsers(params)
-    console.log('API响应:', response)
+    console.log('后端API响应:', response)
+    
     if (response.success && response.data) {
       userList.value = response.data.list || []
       pagination.total = response.data.total || 0
       console.log('用户列表:', userList.value)
       console.log('总数:', pagination.total)
+      
+      // 如果搜索结果为空，显示提示
+      if (userList.value.length === 0 && (params.username || params.email || params.status)) {
+        ElMessage.info('没有找到符合条件的用户')
+      }
     } else {
-      // 如果API失败，使用测试数据
-      console.log('API失败，使用测试数据')
-      userList.value = [
-        {
-          id: 1,
-          username: 'testuser1',
-          email: 'test1@example.com',
-          status: 'active',
-          imageCount: 5,
-          createdAt: '2024-12-01T10:30:00Z',
-          lastLoginAt: '2024-12-19T09:15:00Z'
-        },
-        {
-          id: 2,
-          username: 'testuser2',
-          email: 'test2@example.com',
-          status: 'active',
-          imageCount: 3,
-          createdAt: '2024-11-15T14:20:00Z',
-          lastLoginAt: '2024-12-18T16:45:00Z'
-        },
-        {
-          id: 3,
-          username: 'testuser3',
-          email: 'test3@example.com',
-          status: 'inactive',
-          imageCount: 0,
-          createdAt: '2024-10-20T08:10:00Z',
-          lastLoginAt: null
-        }
-      ]
-      pagination.total = 3
+      console.log('API返回失败状态:', response)
+      ElMessage.error(response.message || '获取用户列表失败')
+      userList.value = []
+      pagination.total = 0
     }
   } catch (error) {
-    ElMessage.error('加载用户列表失败')
     console.error('加载用户列表失败:', error)
-    // 使用测试数据
-    userList.value = [
-      {
-        id: 1,
-        username: 'testuser1',
-        email: 'test1@example.com',
-        status: 'active',
-        imageCount: 5,
-        createdAt: '2024-12-01T10:30:00Z',
-        lastLoginAt: '2024-12-19T09:15:00Z'
-      },
-      {
-        id: 2,
-        username: 'testuser2',
-        email: 'test2@example.com',
-        status: 'active',
-        imageCount: 3,
-        createdAt: '2024-11-15T14:20:00Z',
-        lastLoginAt: '2024-12-18T16:45:00Z'
-      },
-      {
-        id: 3,
-        username: 'testuser3',
-        email: 'test3@example.com',
-        status: 'inactive',
-        imageCount: 0,
-        createdAt: '2024-10-20T08:10:00Z',
-        lastLoginAt: null
-      }
-    ]
-    pagination.total = 3
+    ElMessage.error('加载用户列表失败，请检查网络连接')
+    userList.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
   }
@@ -371,6 +338,7 @@ const loadUserList = async () => {
 
 // 搜索
 const handleSearch = () => {
+  console.log('🔍 开始搜索，搜索表单数据:', searchForm)
   pagination.page = 1
   loadUserList()
 }
@@ -446,7 +414,7 @@ const toggleUserStatus = async (user) => {
       }
     )
     
-    await userAPI.updateUserStatus(user.id, newStatus)
+    await userAPI.updateUser(user.id, { status: newStatus })
     user.status = newStatus
     ElMessage.success(`${action}成功`)
   } catch (error) {

@@ -106,6 +106,15 @@ export const userAPI = {
   },
 
   /**
+   * 批量更新用户状态
+   * @param {Array<number>} userIds - 用户ID数组
+   * @param {string} status - 新状态 (active, disabled)
+   */
+  batchUpdateUserStatus(userIds, status) {
+    return adminRequest.post('/admin/users/batch-update-status', { userIds, status })
+  },
+
+  /**
    * 获取用户活动记录
    * @param {number} id - 用户ID
    * @param {Object} params - 查询参数
@@ -192,6 +201,14 @@ export const analyticsAPI = {
    */
   getUserAnalytics() {
     return adminRequest.get('/admin/analytics/users')
+  },
+
+  /**
+   * 获取时段分布数据
+   * @param {number} days - 统计天数 (默认: 7)
+   */
+  getHourDistribution(days = 7) {
+    return adminRequest.get('/admin/analytics/hour-distribution', { params: { days } })
   }
 }
 

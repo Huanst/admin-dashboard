@@ -59,12 +59,14 @@ request.interceptors.response.use(
         case 401:
           // 未授权，清除登录状态并跳转到登录页
           const authStore = useAuthStore()
-          authStore.logout()
-          router.push('/login')
-          ElMessage.error(data?.message || '未授权，请重新登录')
+          authStore.logout(false, true) // 不显示退出消息，直接跳转
+          ElMessage.error(data?.message || '登录已过期，请重新登录')
           break
         case 403:
-          ElMessage.error(data?.message || '权限不足')
+          // 权限不足，可能是token无效或权限过期
+          const authStore403 = useAuthStore()
+          authStore403.logout(false, true) // 不显示退出消息，直接跳转
+          ElMessage.error(data?.message || '权限不足，请重新登录')
           break
         case 404:
           ElMessage.error(data?.message || '资源不存在')
@@ -149,7 +151,10 @@ adminRequest.interceptors.response.use(
           ElMessage.error(data?.message || '未授权，请重新登录')
           break
         case 403:
-          ElMessage.error(data?.message || '权限不足')
+          // 权限不足，可能是token无效或权限过期
+          const authStore403Admin = useAuthStore()
+          authStore403Admin.logout(false, true) // 不显示退出消息，直接跳转
+          ElMessage.error(data?.message || '权限不足，请重新登录')
           break
         case 404:
           ElMessage.error(data?.message || '资源不存在')

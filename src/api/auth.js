@@ -38,6 +38,26 @@ export const authAPI = {
    */
   validateToken() {
     return adminRequest.post('/auth/validate-token')
+  },
+
+  /**
+   * 更新个人资料
+   * @param {Object} data - 更新数据
+   * @param {string} data.username - 用户名
+   * @param {string} data.email - 邮箱
+   */
+  updateProfile(data) {
+    return adminRequest.put('/user/profile', data)
+  },
+
+  /**
+   * 修改密码
+   * @param {Object} data - 密码数据
+   * @param {string} data.currentPassword - 当前密码
+   * @param {string} data.newPassword - 新密码
+   */
+  changePassword(data) {
+    return adminRequest.put('/user/password', data)
   }
 }
 

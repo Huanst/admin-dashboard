@@ -201,7 +201,13 @@ let hourDistributionChartInstance: echarts.ECharts | null = null
 
 // 响应式数据
 const loading = ref(false)
-const dateRange = ref<[string, string]>(['2024-01-01', '2024-12-31'])
+// 设置默认日期范围为最近7天
+const today = new Date()
+const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+const dateRange = ref<[string, string]>([
+  sevenDaysAgo.toISOString().split('T')[0],
+  today.toISOString().split('T')[0]
+])
 const trendPeriod = ref('30d')
 
 // 统计数据
@@ -405,15 +411,27 @@ const initUserDistributionChart = () => {
 
 // 初始化时段分布图表
 const initHourDistributionChart = () => {
-  if (!hourDistributionChart.value) return
-  
+  console.log('initHourDistributionChart被调用')
+  console.log('hourDistributionChart.value存在:', !!hourDistributionChart.value)
+
+  if (!hourDistributionChart.value) {
+    console.error('hourDistributionChart DOM元素不存在')
+    return
+  }
+
+  console.log('开始初始化ECharts实例...')
   hourDistributionChartInstance = echarts.init(hourDistributionChart.value)
-  
+  console.log('ECharts实例创建成功:', !!hourDistributionChartInstance)
+
   const option = {
     tooltip: {
       trigger: 'axis',
       axisPointer: {
         type: 'shadow'
+      },
+      formatter: function(params) {
+        const data = params[0]
+        return `${data.name}<br/>${data.seriesName}: ${data.value}`
       }
     },
     grid: {
@@ -433,7 +451,7 @@ const initHourDistributionChart = () => {
       {
         name: '生成数量',
         type: 'bar',
-        data: [12, 8, 6, 4, 3, 5, 8, 15, 25, 35, 42, 48, 52, 45, 38, 42, 48, 55, 48, 35, 28, 22, 18, 15],
+        data: Array.from({ length: 24 }, () => 0), // 初始化为0，等待真实数据
         itemStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: '#409eff' },
@@ -443,8 +461,47 @@ const initHourDistributionChart = () => {
       }
     ]
   }
-  
+
   hourDistributionChartInstance.setOption(option)
+  console.log('时段分布图表初始化完成')
+}
+
+// 更新时段分布图表
+const updateHourDistributionChart = (hourData) => {
+  console.log('updateHourDistributionChart被调用，数据:', hourData)
+  console.log('图表实例存在:', !!hourDistributionChartInstance)
+
+  if (!hourDistributionChartInstance || !hourData) {
+    console.error('图表实例或数据不存在')
+    return
+  }
+
+  const counts = hourData.map(item => item.count)
+  const labels = hourData.map(item => item.hourLabel)
+
+  console.log('处理后的数据 - counts:', counts)
+  console.log('处理后的数据 - labels:', labels)
+
+  const option = {
+    xAxis: {
+      data: labels
+    },
+    series: [{
+      name: '生成数量',
+      type: 'bar',
+      data: counts,
+      itemStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: '#409eff' },
+          { offset: 1, color: '#79bbff' }
+        ])
+      }
+    }]
+  }
+
+  console.log('设置图表选项:', option)
+  hourDistributionChartInstance.setOption(option)
+  console.log('图表选项设置完成')
 }
 
 // 加载趋势数据
@@ -572,10 +629,34 @@ const loadUserAnalytics = async () => {
   }
 }
 
+// 加载时段分布数据
+const loadHourDistribution = async () => {
+  try {
+    console.log('开始加载时段分布数据...')
+    const days = Math.abs(new Date(dateRange.value[1]) - new Date(dateRange.value[0])) / (1000 * 60 * 60 * 24)
+    console.log('计算的天数:', Math.ceil(days) || 7)
+
+    const response = await analyticsAPI.getHourDistribution(Math.ceil(days) || 7)
+    console.log('时段分布API响应:', response)
+
+    if (response.success && response.data) {
+      console.log('时段分布数据:', response.data)
+      updateHourDistributionChart(response.data)
+    } else {
+      console.error('时段分布API返回失败:', response)
+      ElMessage.error('获取时段分布数据失败: ' + (response.message || '未知错误'))
+    }
+  } catch (error) {
+    console.error('加载时段分布数据失败:', error)
+    ElMessage.error('加载时段分布数据失败: ' + error.message)
+  }
+}
+
 // 日期范围变化
 const handleDateChange = () => {
   loadTrendData()
   loadStats()
+  loadHourDistribution()
 }
 
 // 刷新数据
@@ -584,6 +665,7 @@ const handleRefresh = () => {
   loadTrendData()
   loadRecentGenerations()
   loadUserAnalytics()
+  loadHourDistribution()
 }
 
 // 导出提示词数据
@@ -640,18 +722,22 @@ const handleResize = () => {
 
 // 生命周期
 onMounted(async () => {
+  // 先初始化图表
+  await nextTick()
+  console.log('开始初始化图表...')
+  initTrendChart()
+  initUserDistributionChart()
+  initHourDistributionChart()
+  console.log('图表初始化完成，hourDistributionChartInstance存在:', !!hourDistributionChartInstance)
+
+  // 然后加载数据
   await Promise.all([
     loadStats(),
     loadTrendData(),
     loadRecentGenerations(),
-    loadUserAnalytics()
+    loadUserAnalytics(),
+    loadHourDistribution()
   ])
-
-  nextTick(() => {
-    initTrendChart()
-    initUserDistributionChart()
-    initHourDistributionChart()
-  })
 
   window.addEventListener('resize', handleResize)
 })
