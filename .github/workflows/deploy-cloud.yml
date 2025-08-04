@@ -24,6 +24,9 @@ env:
   NODE_VERSION: '22.17.0'
   PNPM_VERSION: '10.12.4'
   BUILD_PATH: 'dist'
+  PROJECT_NAME: 'admin-dashboard'
+  DEPLOY_PATH: '/var/www/admin-dashboard'
+  BACKUP_PATH: '/var/backups/admin-dashboard'
 
 jobs:
   # 构建和部署任务
@@ -216,16 +219,19 @@ jobs:
         run: |
           echo "压缩构建产物..."
           
+          # 设置压缩包文件名变量
+          BUILD_ARCHIVE="${{ env.PROJECT_NAME }}-build-${{ github.sha }}.tar.gz"
+          
           # 创建压缩包
-          tar -czf ${{ env.PROJECT_NAME }}-build-${{ github.sha }}.tar.gz -C ${{ env.BUILD_PATH }} .
+          tar -czf "$BUILD_ARCHIVE" -C ${{ env.BUILD_PATH }} .
           
           echo "✅ 压缩完成"
           echo "压缩包大小："
-          ls -lh ${{ env.PROJECT_NAME }}-build-${{ github.sha }}.tar.gz
+          ls -lh "$BUILD_ARCHIVE"
           
           # 验证压缩包内容
           echo "压缩包内容预览："
-          tar -tzf ${{ env.PROJECT_NAME }}-build-${{ github.sha }}.tar.gz | head -10
+          tar -tzf "$BUILD_ARCHIVE" | head -10
 
       # 12. 部署文件到服务器
       - name: 🚀 部署 Admin Dashboard 文件到云服务器
