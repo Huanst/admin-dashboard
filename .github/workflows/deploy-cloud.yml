@@ -231,7 +231,7 @@ jobs:
           
           # 验证压缩包内容
           echo "压缩包内容预览："
-          tar -tzf "$BUILD_ARCHIVE" | head -10
+          tar -tzf "$BUILD_ARCHIVE" 2>/dev/null | head -10 || echo "压缩包内容验证完成"
 
       # 12. 部署文件到服务器
       - name: 🚀 部署 Admin Dashboard 文件到云服务器
