@@ -182,8 +182,20 @@ jobs:
       # 10. 构建项目
       - name: 🏗️ 构建 Admin Dashboard Vue3 项目
         shell: bash
+        env:
+          # 生产环境变量
+          NODE_ENV: production
+          VITE_API_BASE_URL: https://huanst.cn/api
+          VITE_API_SERVER_URL: https://huanst.cn
+          VITE_APP_TITLE: 管理员仪表盘
         run: |
            echo "开始构建项目..."
+           
+           # 显示构建环境信息
+           echo "构建环境变量:"
+           echo "- NODE_ENV: $NODE_ENV"
+           echo "- VITE_API_BASE_URL: $VITE_API_BASE_URL"
+           echo "- VITE_API_SERVER_URL: $VITE_API_SERVER_URL"
            
            # 检查构建脚本是否存在
            if ! pnpm run --if-present build --help 2>/dev/null | grep -q "build"; then
