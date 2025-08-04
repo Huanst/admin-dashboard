@@ -55,7 +55,7 @@ const routes = [
       {
         path: '/users/create',
         name: 'UserCreate',
-        component: () => import('@/views/users/Create.vue'),
+        component: () => import('@/views/Users/Create.vue'),
         meta: {
           title: '创建用户',
           icon: 'User'
@@ -64,7 +64,7 @@ const routes = [
       {
         path: '/users/:id',
         name: 'UserDetail',
-        component: () => import('@/views/users/Detail.vue'),
+        component: () => import('@/views/Users/Detail.vue'),
         meta: {
           title: '用户详情',
           icon: 'User'
