@@ -1,6 +1,6 @@
 # GitHub Actions 自动化部署配置文件
-# 用于将 Admin Dashboard Vue3 项目自动构建并部署到云服务器
-name: 部署 Admin Dashboard 到服务器
+# 用于将 Vue3 项目自动构建并部署到云服务器
+name: Deploy Vue3 App to Cloud Server
 
 # 触发条件：当推送到 main 分支时自动执行
 on:
@@ -24,15 +24,11 @@ env:
   NODE_VERSION: '22.17.0'
   PNPM_VERSION: '10.12.4'
   BUILD_PATH: 'dist'
-  # Admin Dashboard 专用配置
-  PROJECT_NAME: 'admin-dashboard'
-  DEPLOY_PATH: '/www/wwwroot/admin-dashboard.huanst.cn'
-  BACKUP_PATH: '/var/backups/admin-dashboard'
 
 jobs:
   # 构建和部署任务
   build-and-deploy:
-    name: 构建并部署 Admin Dashboard 到云服务器
+    name: 构建并部署到云服务器
     runs-on: ubuntu-latest
     
     # 设置超时时间（30分钟）
@@ -116,7 +112,7 @@ jobs:
           echo "已安装的包数量: $(pnpm list --depth=0 2>/dev/null | wc -l)"
 
       # 8. 构建项目
-      - name: 🏗️ 构建 Admin Dashboard Vue3 项目
+      - name: 🏗️ 构建 Vue3 项目
         shell: bash
         run: |
            echo "开始构建项目..."
@@ -156,30 +152,30 @@ jobs:
           echo "压缩构建产物..."
           
           # 创建压缩包
-          tar -czf ${{ env.PROJECT_NAME }}-build-${{ github.sha }}.tar.gz -C ${{ env.BUILD_PATH }} .
+          tar -czf build-${{ github.sha }}.tar.gz -C ${{ env.BUILD_PATH }} .
           
           echo "✅ 压缩完成"
           echo "压缩包大小："
-          ls -lh ${{ env.PROJECT_NAME }}-build-${{ github.sha }}.tar.gz
+          ls -lh build-${{ github.sha }}.tar.gz
           
           # 验证压缩包内容
           echo "压缩包内容预览："
-          tar -tzf ${{ env.PROJECT_NAME }}-build-${{ github.sha }}.tar.gz | head -10
+          tar -tzf build-${{ github.sha }}.tar.gz | head -10
 
       # 10. 部署文件到服务器
-      - name: 🚀 部署 Admin Dashboard 文件到云服务器
+      - name: 🚀 部署文件到云服务器
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT || 22 }}
-          source: "${{ env.PROJECT_NAME }}-build-${{ github.sha }}.tar.gz"
+          source: "build-${{ github.sha }}.tar.gz"
           target: "/tmp/"
           timeout: 300s
 
       # 11. 在服务器上执行部署脚本
-      - name: 🔄 执行 Admin Dashboard 服务器部署脚本
+      - name: 🔄 执行服务器部署脚本
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -190,13 +186,12 @@ jobs:
           script: |
             set -e  # 遇到错误立即退出
             
-            echo "=== 开始 Admin Dashboard 部署流程 ==="
+            echo "=== 开始部署流程 ==="
             
             # 设置变量
-            DEPLOY_PATH="${{ env.DEPLOY_PATH }}"
-            BACKUP_PATH="${{ env.BACKUP_PATH }}"
-            BUILD_FILE="/tmp/${{ env.PROJECT_NAME }}-build-${{ github.sha }}.tar.gz"
-            PROJECT_NAME="${{ env.PROJECT_NAME }}"
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            BACKUP_PATH="${{ secrets.BACKUP_PATH || '/var/backups/webapp' }}"
+            BUILD_FILE="/tmp/build-${{ github.sha }}.tar.gz"
             
             echo "部署路径: $DEPLOY_PATH"
             echo "备份路径: $BACKUP_PATH"
@@ -216,78 +211,18 @@ jobs:
               sudo ls -t backup-*.tar.gz 2>/dev/null | tail -n +6 | sudo xargs rm -f || true
             fi
             
-            # 清理旧文件和处理受保护文件
-            echo "清理部署目录和处理受保护文件..."
-            
-            # 处理 .user.ini 等受保护文件
-            find "$DEPLOY_PATH" -name ".user.ini" -type f 2>/dev/null | while read file; do
-              echo "处理受保护文件: $file"
-              sudo chattr -i "$file" 2>/dev/null || true
-              sudo chattr -a "$file" 2>/dev/null || true
-              sudo chattr -u "$file" 2>/dev/null || true
-              sudo rm -f "$file" 2>/dev/null || sudo mv "$file" "${file}.backup.$(date +%s)" 2>/dev/null || true
-            done
-            
-            # 清理其他文件
+            # 清理旧文件
+            echo "清理部署目录..."
             sudo rm -rf "$DEPLOY_PATH"/*
             
             # 解压新版本
             echo "部署新版本..."
             sudo tar -xzf "$BUILD_FILE" -C "$DEPLOY_PATH"
             
-            # 智能检测Web服务器用户
-            echo "检测Web服务器用户..."
-            WEB_USER=""
-            if id "www-data" &>/dev/null; then
-              WEB_USER="www-data"
-              echo "✅ 检测到 www-data 用户"
-            elif id "nginx" &>/dev/null; then
-              WEB_USER="nginx"
-              echo "✅ 检测到 nginx 用户"
-            elif id "apache" &>/dev/null; then
-              WEB_USER="apache"
-              echo "✅ 检测到 apache 用户"
-            else
-              WEB_USER="$(whoami)"
-              echo "⚠️ 未检测到标准Web用户，使用当前用户: $WEB_USER"
-            fi
-            
-            # 验证用户是否存在
-            if ! id "$WEB_USER" &>/dev/null; then
-              WEB_USER="$(whoami)"
-              echo "⚠️ 回退到当前用户: $WEB_USER"
-            fi
-            
-            echo "🎯 最终使用用户: $WEB_USER"
-            
-            # 再次处理可能的受保护文件
-            echo "二次检查受保护文件..."
-            find "$DEPLOY_PATH" -name ".user.ini" -type f 2>/dev/null | while read file; do
-              echo "二次处理: $file"
-              sudo chattr -i "$file" 2>/dev/null || true
-              sudo rm -f "$file" 2>/dev/null || sudo mv "$file" "${file}.bak" 2>/dev/null || true
-            done
-            
             # 设置文件权限
             echo "设置文件权限..."
-            
-            # 精确权限设置
-            echo "🎯 精确设置文件权限..."
-            sudo find "$DEPLOY_PATH" -type f -name "*.html" -exec chown "$WEB_USER:$WEB_USER" {} \; 2>/dev/null || true
-            sudo find "$DEPLOY_PATH" -type f -name "*.js" -exec chown "$WEB_USER:$WEB_USER" {} \; 2>/dev/null || true
-            sudo find "$DEPLOY_PATH" -type f -name "*.css" -exec chown "$WEB_USER:$WEB_USER" {} \; 2>/dev/null || true
-            sudo find "$DEPLOY_PATH" -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.svg" -o -name "*.ico" \) -exec chown "$WEB_USER:$WEB_USER" {} \; 2>/dev/null || true
-            sudo find "$DEPLOY_PATH" -type d -exec chown "$WEB_USER:$WEB_USER" {} \; 2>/dev/null || true
-            
-            # 备用权限设置
-            if [ $? -ne 0 ]; then
-              echo "⚠️ 精确权限设置失败，使用备用方案..."
-              sudo chown -R "$WEB_USER:$WEB_USER" "$DEPLOY_PATH" 2>/dev/null || sudo chown -R "$WEB_USER" "$DEPLOY_PATH" 2>/dev/null || true
-            fi
-            
-            # 设置文件权限
+            sudo chown -R www-data:www-data "$DEPLOY_PATH" || sudo chown -R nginx:nginx "$DEPLOY_PATH" || echo "权限设置可能需要手动调整"
             sudo chmod -R 755 "$DEPLOY_PATH"
-            sudo find "$DEPLOY_PATH" -type f -exec chmod 644 {} \; 2>/dev/null || true
             
             # 重启相关服务（根据实际情况调整）
             echo "重启 Web 服务..."
@@ -297,73 +232,32 @@ jobs:
             echo "清理临时文件..."
             rm -f "$BUILD_FILE"
             
-            # 部署状态验证
-            echo "验证部署状态..."
-            
-            # 检查关键文件
-            if [ -f "$DEPLOY_PATH/index.html" ]; then
-              echo "✅ index.html 文件存在"
-            else
-              echo "❌ 错误: index.html 文件不存在"
-              exit 1
-            fi
-            
-            # 检查 assets 目录
-            if [ -d "$DEPLOY_PATH/assets" ]; then
-              echo "✅ assets 目录存在"
-            else
-              echo "⚠️ 警告: assets 目录不存在"
-            fi
-            
-            # 检查是否还有受保护文件
-            REMAINING_PROTECTED=$(find "$DEPLOY_PATH" -name ".user.ini" -type f 2>/dev/null || true)
-            if [ -n "$REMAINING_PROTECTED" ]; then
-              echo "⚠️ 警告: 仍存在受保护文件，但不影响部署"
-              echo "$REMAINING_PROTECTED"
-            else
-              echo "✅ 所有受保护文件已处理"
-            fi
-            
             # 健康检查（可选）
             echo "执行健康检查..."
-            if [ ! -z "${{ secrets.ADMIN_HEALTH_CHECK_URL }}" ]; then
+            if [ ! -z "${{ secrets.HEALTH_CHECK_URL }}" ]; then
               sleep 5  # 等待服务启动
-              curl -f "${{ secrets.ADMIN_HEALTH_CHECK_URL }}" || echo "健康检查失败，请手动验证"
+              curl -f "${{ secrets.HEALTH_CHECK_URL }}" || echo "健康检查失败，请手动验证"
             fi
             
-            # 测试本地访问
-            echo "测试本地访问..."
-            curl -I "http://localhost" 2>/dev/null || echo "本地访问测试跳过"
-            
-            echo "=== Admin Dashboard 部署完成 ==="
-            echo "项目名称: $PROJECT_NAME"
+            echo "=== 部署完成 ==="
             echo "部署时间: $(date)"
             echo "Git 提交: ${{ github.sha }}"
             echo "部署路径: $DEPLOY_PATH"
-            echo "访问地址: http://admin-dashboard.huanst.cn"
 
       # 12. 部署状态通知（可选）
-      - name: 📢 发送 Admin Dashboard 部署通知
+      - name: 📢 发送部署通知
         if: always()
         shell: bash
         run: |
           if [ "${{ job.status }}" == "success" ]; then
-            echo "✅ Admin Dashboard 部署成功！"
-            echo "🎯 项目: ${{ env.PROJECT_NAME }}"
+            echo "✅ 部署成功！"
             echo "🔗 提交: ${{ github.sha }}"
             echo "🌐 分支: ${{ github.ref_name }}"
-            echo "📁 部署路径: ${{ env.DEPLOY_PATH }}"
-            echo "🌍 访问地址: http://admin-dashboard.huanst.cn"
             echo "⏰ 时间: $(date)"
           else
-            echo "❌ Admin Dashboard 部署失败！"
-            echo "🎯 项目: ${{ env.PROJECT_NAME }}"
-            echo "🔗 提交: ${{ github.sha }}"
-            echo "🌐 分支: ${{ github.ref_name }}"
+            echo "❌ 部署失败！"
             echo "请检查日志并修复问题"
           fi
           
           # 如果配置了通知 Webhook，可以在这里发送通知
-          # curl -X POST "${{ secrets.ADMIN_NOTIFICATION_WEBHOOK }}" \
-          #   -H "Content-Type: application/json" \
-          #   -d '{"project": "${{ env.PROJECT_NAME }}", "status": "${{ job.status }}", "commit": "${{ github.sha }}", "url": "http://admin-dashboard.huanst.cn"}'
+          # curl -X POST "${{ secrets.NOTIFICATION_WEBHOOK }}" -d '{"status": "${{ job.status }}", "commit": "${{ github.sha }}"}'
