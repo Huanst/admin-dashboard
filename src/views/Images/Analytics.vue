@@ -124,6 +124,50 @@
           </div>
         </div>
       </el-card>
+
+      <!-- 热门词汇统计 -->
+      <el-card class="popular-words" shadow="never">
+        <template #header>
+          <div class="card-header">
+            <h3>热门词汇统计</h3>
+            <div class="header-controls">
+              <el-select v-model="wordsConfig.days" size="small" style="width: 80px; margin-right: 8px;" @change="loadPopularWords">
+                <el-option label="7天" :value="7" />
+                <el-option label="30天" :value="30" />
+                <el-option label="90天" :value="90" />
+              </el-select>
+              <el-button type="primary" link @click="exportWords">
+                导出数据
+              </el-button>
+            </div>
+          </div>
+        </template>
+        <div class="words-list" v-loading="wordsLoading">
+          <div 
+            v-for="(word, index) in popularWords" 
+            :key="word.id"
+            class="word-item"
+          >
+            <div class="word-rank">{{ index + 1 }}</div>
+            <div class="word-content">
+              <div class="word-text">{{ word.word }}</div>
+              <div class="word-count">{{ word.count }}次</div>
+            </div>
+            <div class="word-badge">
+              <el-tag 
+                :type="index < 3 ? 'danger' : index < 10 ? 'warning' : 'info'" 
+                size="small"
+                effect="plain"
+              >
+                TOP {{ index + 1 }}
+              </el-tag>
+            </div>
+          </div>
+          <div v-if="popularWords.length === 0 && !wordsLoading" class="empty-words">
+            <el-empty description="暂无词汇数据" :image-size="60" />
+          </div>
+        </div>
+      </el-card>
       
       <!-- 最近生成记录 -->
       <el-card class="recent-generations" shadow="never">
@@ -288,6 +332,15 @@ const popularPrompts = ref([
     trend: 3
   }
 ])
+
+// 热门词汇统计
+const popularWords = ref([])
+const wordsLoading = ref(false)
+const wordsConfig = reactive({
+  days: 7,
+  limit: 20,
+  minLength: 2
+})
 
 // 最近生成记录
 const recentGenerations = ref<ImageGeneration[]>([])
@@ -607,25 +660,39 @@ const loadRecentGenerations = async () => {
   }
 }
 
+// 加载热门提示词数据
+const loadPopularPrompts = async () => {
+  try {
+    const response = await dashboardAPI.getPopularPrompts(10) // 获取前10个热门提示词
+    if (response.success && response.data) {
+      popularPrompts.value = response.data.map((prompt, index) => ({
+        id: index + 1,
+        text: prompt.text || prompt.prompt,
+        count: prompt.count,
+        userCount: prompt.userCount || Math.floor(prompt.count / 2), // 如果没有用户数，估算一个
+        trend: prompt.trend || Math.floor(Math.random() * 20) - 10 // 如果没有趋势数据，模拟一个
+      }))
+    } else {
+      console.error('获取热门提示词失败:', response.message)
+      ElMessage.error('获取热门提示词失败: ' + (response.message || '未知错误'))
+    }
+  } catch (error) {
+    console.error('加载热门提示词失败:', error)
+    ElMessage.error('加载热门提示词失败: ' + error.message)
+  }
+}
+
 // 加载用户分析数据
 const loadUserAnalytics = async () => {
   try {
     const response = await analyticsAPI.getUserAnalytics()
     if (response.success && response.data) {
-      // 更新热门提示词（基于分类统计）
-      if (response.data.categoryStats) {
-        popularPrompts.value = response.data.categoryStats.map((category, index) => ({
-          id: index + 1,
-          text: category.category || '未分类',
-          count: category.count,
-          userCount: Math.floor(category.count / 2), // 估算用户数
-          trend: Math.floor(Math.random() * 20) - 10 // 模拟趋势
-        }))
-      }
+      // 这里可以处理其他用户分析数据，但热门提示词已经单独处理
+      console.log('用户分析数据:', response.data)
     }
   } catch (error) {
     console.error('加载用户分析数据失败:', error)
-    ElMessage.error('加载用户分析数据失败')
+    // 不显示错误消息，因为这不是关键功能
   }
 }
 
@@ -664,6 +731,7 @@ const handleRefresh = () => {
   loadStats()
   loadTrendData()
   loadRecentGenerations()
+  loadPopularPrompts()
   loadUserAnalytics()
   loadHourDistribution()
 }
@@ -685,6 +753,56 @@ const exportPrompts = async () => {
     
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     await downloadFile(URL.createObjectURL(blob), 'popular_prompts.csv')
+    ElMessage.success('导出成功')
+  } catch (error) {
+    ElMessage.error('导出失败')
+    console.error('导出失败:', error)
+  }
+}
+
+// 加载热门词汇统计
+const loadPopularWords = async () => {
+  wordsLoading.value = true
+  try {
+    const response = await dashboardAPI.getPopularWords({
+      limit: wordsConfig.limit,
+      days: wordsConfig.days,
+      minLength: wordsConfig.minLength
+    })
+    
+    if (response.success && response.data) {
+      popularWords.value = response.data.map((word, index) => ({
+        id: index + 1,
+        word: word.word,
+        count: word.count
+      }))
+    } else {
+      console.error('获取热门词汇失败:', response.message)
+      ElMessage.error('获取热门词汇失败: ' + (response.message || '未知错误'))
+    }
+  } catch (error) {
+    console.error('加载热门词汇失败:', error)
+    ElMessage.error('加载热门词汇失败: ' + error.message)
+  } finally {
+    wordsLoading.value = false
+  }
+}
+
+// 导出词汇数据
+const exportWords = async () => {
+  try {
+    const data = popularWords.value.map(word => ({
+      排名: word.id,
+      词汇: word.word,
+      出现次数: word.count
+    }))
+    
+    const csv = [Object.keys(data[0]).join(',')]
+      .concat(data.map(row => Object.values(row).join(',')))
+      .join('\n')
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    await downloadFile(URL.createObjectURL(blob), 'popular_words.csv')
     ElMessage.success('导出成功')
   } catch (error) {
     ElMessage.error('导出失败')
@@ -736,7 +854,8 @@ onMounted(async () => {
     loadTrendData(),
     loadRecentGenerations(),
     loadUserAnalytics(),
-    loadHourDistribution()
+    loadHourDistribution(),
+    loadPopularWords()
   ])
 
   window.addEventListener('resize', handleResize)
@@ -914,11 +1033,12 @@ onUnmounted(cleanup)
 
 .bottom-section {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: var(--admin-padding-lg);
 }
 
 .popular-prompts,
+.popular-words,
 .recent-generations {
   background: var(--el-bg-color);
   border-radius: var(--admin-border-radius-lg);
@@ -938,11 +1058,73 @@ onUnmounted(cleanup)
   color: var(--el-text-color-primary);
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+}
+
 .prompts-list,
+.words-list,
 .generations-list {
   padding: var(--admin-padding-md);
   max-height: 400px;
   overflow-y: auto;
+}
+
+.word-item {
+  display: flex;
+  align-items: center;
+  gap: var(--admin-padding-md);
+  padding: var(--admin-padding-md);
+  border-radius: var(--admin-border-radius);
+  transition: background-color 0.3s ease;
+  margin-bottom: var(--admin-padding-sm);
+}
+
+.word-item:hover {
+  background: var(--el-fill-color-light);
+}
+
+.word-rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--el-color-success);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.word-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.word-text {
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.word-count {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+}
+
+.word-badge {
+  flex-shrink: 0;
+}
+
+.empty-words {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
 }
 
 .prompt-item {
@@ -1055,7 +1237,16 @@ onUnmounted(cleanup)
 
 /* 响应式设计 */
 @media (max-width: 1200px) {
-  .chart-row:last-child,
+  .chart-row:last-child {
+    grid-template-columns: 1fr;
+  }
+  
+  .bottom-section {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 900px) {
   .bottom-section {
     grid-template-columns: 1fr;
   }

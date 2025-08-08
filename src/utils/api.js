@@ -246,6 +246,20 @@ export const dashboardAPI = {
    */
   getPopularPrompts(limit = 5) {
     return request.get('/api/dashboard/popular-prompts', { params: { limit } })
+  },
+
+  /**
+   * 获取热门词汇统计
+   * @param {Object} params - 查询参数
+   * @param {number} params.limit - 限制数量 (默认: 20)
+   * @param {number} params.days - 统计天数 (默认: 7)
+   * @param {number} params.minLength - 最小词汇长度 (默认: 2)
+   */
+  getPopularWords(params = {}) {
+    const { limit = 20, days = 7, minLength = 2 } = params
+    return request.get('/api/stats/popular-words', { 
+      params: { limit, days, minLength } 
+    })
   }
 }
 

@@ -329,7 +329,7 @@ const handleGenerate = async () => {
     progress.value = 100
     progressText.value = '生成完成！'
 
-    if (response.status === 'success') {
+    if (response.success === true) {
       // 处理生成结果
       const newImages = Array.isArray(response.data) ? response.data : [response.data]
       generatedImages.value.unshift(...newImages.map(img => ({
@@ -396,7 +396,7 @@ const loadHistory = async () => {
       pageSize: historyPagination.pageSize
     })
     
-    if (response.status === 'success') {
+    if (response.success === true) {
       historyList.value = response.data.list || []
       historyPagination.total = response.data.total || 0
     }
