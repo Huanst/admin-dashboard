@@ -338,7 +338,8 @@ const pagination = reactive({
 const getImageUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  return `http://localhost:5004${url}`
+  const serverUrl = import.meta.env.VITE_API_SERVER_URL || 'http://localhost:5004'
+  return `${serverUrl}${url}`
 }
 
 

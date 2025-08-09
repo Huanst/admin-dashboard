@@ -289,7 +289,8 @@ const uploadHeaders = computed(() => {
 const getImageUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  return `${import.meta.env.VITE_API_BASE_URL}${url}`
+  const serverUrl = import.meta.env.VITE_API_SERVER_URL || 'http://localhost:5004'
+  return `${serverUrl}${url}`
 }
 
 const loadUserInfo = async () => {
