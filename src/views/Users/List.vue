@@ -480,7 +480,9 @@ const handleBatchDelete = async () => {
 // 获取完整的图片URL
 const getImageUrl = (url) => {
   if (!url) return ''
-  if (url.startsWith('http')) return url
+  // 检查是否为完整的URL（包括http和https）
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  // 对于相对路径，添加服务器前缀
   const serverUrl = import.meta.env.VITE_API_SERVER_URL || 'http://localhost:5004'
   return `${serverUrl}${url}`
 }
