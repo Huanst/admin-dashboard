@@ -187,7 +187,7 @@
         <div class="upload-content">
           <el-icon class="upload-icon"><Plus /></el-icon>
           <div class="upload-text">点击或拖拽上传头像</div>
-          <div class="upload-hint">支持 JPG、PNG 格式，文件大小不超过 2MB</div>
+          <div class="upload-hint">支持 JPG、PNG 格式，文件大小不超过 5MB</div>
         </div>
       </el-upload>
       
@@ -399,16 +399,21 @@ const handleAvatarDialogClose = () => {
   avatarDialogVisible.value = false
 }
 
+/**
+ * 头像上传前的验证
+ * @param {File} file - 上传的文件
+ * @returns {boolean} 验证是否通过
+ */
 const beforeAvatarUpload = (file) => {
   const isImage = file.type.startsWith('image/')
-  const isLt2M = file.size / 1024 / 1024 < 2
+  const isLt5M = file.size / 1024 / 1024 < 5
 
   if (!isImage) {
     ElMessage.error('只能上传图片文件!')
     return false
   }
-  if (!isLt2M) {
-    ElMessage.error('图片大小不能超过 2MB!')
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB!')
     return false
   }
   return true
