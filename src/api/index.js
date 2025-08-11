@@ -7,7 +7,6 @@
 import { authAPI } from './auth'
 import { userAPI } from './user'
 import { imageAPI } from './image'
-import { generateAPI } from './generate'
 import { uploadAPI } from './upload'
 import { dashboardAPI } from './dashboard'
 import { systemAPI } from './system'
@@ -18,7 +17,6 @@ export {
   authAPI,
   userAPI,
   imageAPI,
-  generateAPI,
   uploadAPI,
   dashboardAPI,
   systemAPI,
@@ -30,7 +28,6 @@ export default {
   auth: authAPI,
   user: userAPI,
   image: imageAPI,
-  generate: generateAPI,
   upload: uploadAPI,
   dashboard: dashboardAPI,
   system: systemAPI,

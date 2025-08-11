@@ -306,38 +306,7 @@ export const systemAPI = {
   }
 }
 
-/**
- * 图片生成API
- * 基于API文档 5. 图片生成模块
- */
-export const generateAPI = {
-  /**
-   * 生成图片
-   * @param {Object} data - 生成参数
-   * @param {string} data.prompt - 提示词
-   * @param {string} data.model - 模型 (默认: Kwai-Kolors/Kolors)
-   * @param {string} data.image_size - 图片尺寸 (默认: 1280x1280)
-   * @param {number} data.batch_size - 批次大小 (默认: 1)
-   */
-  generateImage(data) {
-    return request.post('/api/generate-image', {
-      model: 'Kwai-Kolors/Kolors',
-      image_size: '1280x1280',
-      batch_size: 1,
-      ...data
-    })
-  },
 
-  /**
-   * 获取生成历史
-   * @param {Object} params - 查询参数
-   * @param {number} params.page - 页码 (默认: 1)
-   * @param {number} params.pageSize - 每页数量 (默认: 10)
-   */
-  getGenerationHistory(params) {
-    return request.get('/api/user/generations', { params })
-  }
-}
 
 /**
  * 文件上传API

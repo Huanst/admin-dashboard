@@ -97,15 +97,7 @@ const routes = [
           icon: 'TrendCharts'
         }
       },
-      {
-        path: '/generate',
-        name: 'Generate',
-        component: () => import('@/views/Generate/index.vue'),
-        meta: {
-          title: 'AI图片生成',
-          icon: 'PictureFilled'
-        }
-      },
+
       {
         path: '/system',
         name: 'System',

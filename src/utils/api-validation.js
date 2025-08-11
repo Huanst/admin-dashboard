@@ -13,7 +13,7 @@ try {
   console.log('  - auth.js: 认证相关API');
   console.log('  - user.js: 用户管理API');
   console.log('  - image.js: 图片管理API');
-  console.log('  - generate.js: 图片生成API');
+
   console.log('  - upload.js: 文件上传API');
   console.log('  - dashboard.js: 仪表盘API');
   console.log('  - system.js: 系统设置API');
@@ -32,7 +32,6 @@ console.log('  - 错误处理: 支持400, 401, 403, 404, 409, 413, 415, 500等�
 console.log('✨ 新增功能验证:');
 console.log('  - 用户注册功能');
 console.log('  - 图片管理功能');
-console.log('  - 图片生成功能');
 console.log('  - 文件上传功能');
 console.log('  - 系统设置功能');
 console.log('  - 批量操作功能\n');
@@ -59,10 +58,7 @@ const apiPaths = {
     '删除图片': 'DELETE /admin/images/:id',
     '批量删除图片': 'DELETE /admin/images/batch'
   },
-  '图片生成': {
-    '生成图片': 'POST /generate/image',
-    '获取生成历史': 'GET /generate/history'
-  },
+
   '文件上传': {
     '上传头像': 'POST /upload/avatar',
     '通用文件上传': 'POST /upload/file'

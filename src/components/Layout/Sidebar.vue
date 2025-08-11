@@ -57,12 +57,6 @@
           </el-menu-item>
         </el-sub-menu>
         
-        <!-- AI图片生成 -->
-        <el-menu-item index="/generate">
-          <el-icon><PictureFilled /></el-icon>
-          <template #title>AI图片生成</template>
-        </el-menu-item>
-        
         <!-- 系统设置 -->
         <el-sub-menu index="/system">
           <template #title>
@@ -92,7 +86,6 @@ import {
   DataBoard,
   User,
   Picture,
-  PictureFilled,
   Setting,
   List,
   TrendCharts,
