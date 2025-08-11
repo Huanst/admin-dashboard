@@ -190,10 +190,17 @@ export const analyticsAPI = {
 
   /**
    * 获取生成趋势数据
-   * @param {string} period - 时间周期 (24h, 7d, 30d)
+   * @param {string} period - 时间周期 (7d, 30d, 90d)
    */
   getTrends(period = '7d') {
-    return adminRequest.get('/admin/analytics/trends', { params: { period } })
+    // 将前端的period格式转换为后端期望的days参数
+    const periodDaysMap = {
+      '7d': 7,
+      '30d': 30,
+      '90d': 90
+    }
+    const days = periodDaysMap[period] || 7
+    return adminRequest.get('/admin/stats/image-trend', { params: { days, period: 'day' } })
   },
 
   /**
@@ -221,7 +228,7 @@ export const dashboardAPI = {
    * 获取系统统计数据
    */
   getStats() {
-    return request.get('/api/dashboard/stats')
+    return adminRequest.get('/admin/dashboard/stats')
   },
 
   /**
@@ -229,7 +236,7 @@ export const dashboardAPI = {
    * @param {number} days - 天数 (默认: 7)
    */
   getUserGrowthTrend(days = 7) {
-    return request.get('/api/dashboard/user-growth-trend', { params: { days } })
+    return adminRequest.get('/admin/dashboard/user-growth', { params: { days } })
   },
 
   /**
@@ -237,7 +244,7 @@ export const dashboardAPI = {
    * @param {number} days - 天数 (默认: 7)
    */
   getImageGenerationTrend(days = 7) {
-    return request.get('/api/dashboard/image-generation-trend', { params: { days } })
+    return adminRequest.get('/admin/dashboard/image-trends', { params: { days } })
   },
 
   /**
@@ -245,7 +252,7 @@ export const dashboardAPI = {
    * @param {number} limit - 限制数量 (默认: 5)
    */
   getPopularPrompts(limit = 5) {
-    return request.get('/api/dashboard/popular-prompts', { params: { limit } })
+    return adminRequest.get('/admin/stats/popular-prompts', { params: { limit } })
   },
 
   /**
@@ -257,7 +264,7 @@ export const dashboardAPI = {
    */
   getPopularWords(params = {}) {
     const { limit = 20, days = 7, minLength = 2 } = params
-    return request.get('/api/stats/popular-words', { 
+    return adminRequest.get('/admin/stats/popular-words', { 
       params: { limit, days, minLength } 
     })
   }

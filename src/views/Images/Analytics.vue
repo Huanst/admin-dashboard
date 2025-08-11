@@ -26,7 +26,7 @@
     
     <!-- 统计卡片 -->
     <div class="stats-grid">
-      <div class="stat-card" v-for="stat in stats" :key="stat.key">
+      <div class="stat-card" v-for="stat in stats" :key="stat.key" v-loading="loading">
         <div class="stat-content">
           <div class="stat-info">
             <h3 class="stat-title">{{ stat.title }}</h3>
@@ -51,40 +51,49 @@
     <div class="charts-section">
       <!-- 生成趋势图 -->
       <div class="chart-row">
-        <el-card class="chart-card full-width" shadow="never">
+        <el-card class="chart-card full-width" shadow="never" v-loading="loading">
           <template #header>
             <div class="chart-header">
               <h3>图片生成趋势</h3>
               <el-radio-group v-model="trendPeriod" size="small" @change="loadTrendData">
                 <el-radio-button value="7d">7天</el-radio-button>
-        <el-radio-button value="30d">30天</el-radio-button>
-        <el-radio-button value="90d">90天</el-radio-button>
+                <el-radio-button value="30d">30天</el-radio-button>
+                <el-radio-button value="90d">90天</el-radio-button>
               </el-radio-group>
             </div>
           </template>
           <div class="chart-content">
             <div ref="trendChart" class="chart"></div>
+            <div v-if="!trendChartInstance" class="chart-placeholder">
+              <el-empty description="正在加载图表数据..." :image-size="80" />
+            </div>
           </div>
         </el-card>
       </div>
       
       <!-- 分布图表 -->
       <div class="chart-row">
-        <el-card class="chart-card" shadow="never">
+        <el-card class="chart-card" shadow="never" v-loading="loading">
           <template #header>
             <h3>用户生成分布</h3>
           </template>
           <div class="chart-content">
             <div ref="userDistributionChart" class="chart"></div>
+            <div v-if="!userDistributionChartInstance" class="chart-placeholder">
+              <el-empty description="正在加载用户分布数据..." :image-size="60" />
+            </div>
           </div>
         </el-card>
         
-        <el-card class="chart-card" shadow="never">
+        <el-card class="chart-card" shadow="never" v-loading="loading">
           <template #header>
             <h3>时段分布</h3>
           </template>
           <div class="chart-content">
             <div ref="hourDistributionChart" class="chart"></div>
+            <div v-if="!hourDistributionChartInstance" class="chart-placeholder">
+              <el-empty description="正在加载时段分布数据..." :image-size="60" />
+            </div>
           </div>
         </el-card>
       </div>
@@ -164,7 +173,12 @@
             </div>
           </div>
           <div v-if="popularWords.length === 0 && !wordsLoading" class="empty-words">
-            <el-empty description="暂无词汇数据" :image-size="60" />
+            <el-empty description="暂无词汇数据" :image-size="60">
+              <template #description>
+                <p>暂无热门词汇数据</p>
+                <el-button type="primary" size="small" @click="loadPopularWords">重新加载</el-button>
+              </template>
+            </el-empty>
           </div>
         </div>
       </el-card>
@@ -190,6 +204,7 @@
                 :src="generation.imageUrl"
                 fit="cover"
                 class="thumb-img"
+                lazy
               >
                 <template #error>
                   <div class="image-error">
@@ -205,6 +220,14 @@
                 <span>{{ getRelativeTime(generation.createdAt) }}</span>
               </div>
             </div>
+          </div>
+          <div v-if="recentGenerations.length === 0" class="empty-generations">
+            <el-empty description="暂无最近生成记录" :image-size="60">
+              <template #description>
+                <p>暂无最近生成记录</p>
+                <el-button type="primary" size="small" @click="loadRecentGenerations">重新加载</el-button>
+              </template>
+            </el-empty>
           </div>
         </div>
       </el-card>
@@ -562,12 +585,12 @@ const loadTrendData = async () => {
   try {
     const response = await analyticsAPI.getTrends(trendPeriod.value)
     if (response.success && response.data) {
-      // 更新趋势图表数据
-      updateTrendChart(response.data.trends)
+      // 更新趋势图表数据 - response.data直接是趋势数组
+      updateTrendChart(response.data)
     }
   } catch (error) {
     console.error('加载趋势数据失败:', error)
-    ElMessage.error('加载趋势数据失败')
+    ElMessage.error('加载趋势数据失败: ' + error.message)
   }
 }
 
@@ -581,7 +604,7 @@ const loadStats = async () => {
     }
   } catch (error) {
     console.error('加载统计数据失败:', error)
-    ElMessage.error('加载统计数据失败')
+    ElMessage.error('加载统计数据失败: ' + error.message)
   }
 }
 
@@ -596,7 +619,7 @@ const updateStats = (data) => {
   const weekGrowth = data.week.images > 0 ? Math.round((data.week.images / 7) * 100) / 100 : 0
   const monthGrowth = data.month.images > 0 ? Math.round((data.month.images / 30) * 100) / 100 : 0
 
-  stats.value[0].change = `总计 ${data.total.users} 用户`
+  stats.value[0].change = `总计 ${data.total.users || data.total.activeUsers || 0} 用户`
   stats.value[1].change = `今日新增`
   stats.value[2].change = `周平均 ${weekGrowth}`
   stats.value[3].change = `月平均 ${monthGrowth}`
@@ -652,11 +675,17 @@ const loadRecentGenerations = async () => {
   try {
     const response = await imageAPI.getImages({ page: 1, pageSize: 10 })
     if (response.success && response.data) {
-      recentGenerations.value = response.data.list || []
+      recentGenerations.value = (response.data.list || response.data.images || []).map(item => ({
+        ...item,
+        imageUrl: item.url || item.imageUrl || item.file_path || '',
+        prompt: item.prompt || '无提示词',
+        username: item.username || `用户${item.userId || item.user_id || '未知'}`,
+        createdAt: item.created_at || item.createdAt || new Date()
+      }))
     }
   } catch (error) {
     console.error('加载最近生成记录失败:', error)
-    ElMessage.error('加载最近生成记录失败')
+    ElMessage.error('加载最近生成记录失败: ' + error.message)
   }
 }
 
@@ -665,7 +694,9 @@ const loadPopularPrompts = async () => {
   try {
     const response = await dashboardAPI.getPopularPrompts(10) // 获取前10个热门提示词
     if (response.success && response.data) {
-      popularPrompts.value = response.data.map((prompt, index) => ({
+      // 处理数据结构 - response.data可能是数组或包含prompts字段的对象
+      const promptsData = Array.isArray(response.data) ? response.data : (response.data.prompts || [])
+      popularPrompts.value = promptsData.map((prompt, index) => ({
         id: index + 1,
         text: prompt.text || prompt.prompt,
         count: prompt.count,
@@ -727,13 +758,24 @@ const handleDateChange = () => {
 }
 
 // 刷新数据
-const handleRefresh = () => {
-  loadStats()
-  loadTrendData()
-  loadRecentGenerations()
-  loadPopularPrompts()
-  loadUserAnalytics()
-  loadHourDistribution()
+const handleRefresh = async () => {
+  loading.value = true
+  try {
+    await Promise.all([
+      loadStats(),
+      loadTrendData(),
+      loadRecentGenerations(),
+      loadPopularPrompts(),
+      loadUserAnalytics(),
+      loadHourDistribution(),
+      loadPopularWords()
+    ])
+    ElMessage.success('数据刷新成功')
+  } catch (error) {
+    ElMessage.error('刷新数据失败: ' + error.message)
+  } finally {
+    loading.value = false
+  }
 }
 
 // 导出提示词数据
@@ -771,7 +813,9 @@ const loadPopularWords = async () => {
     })
     
     if (response.success && response.data) {
-      popularWords.value = response.data.map((word, index) => ({
+      // 处理数据结构 - response.data可能是数组或包含words字段的对象
+      const wordsData = Array.isArray(response.data) ? response.data : (response.data.words || [])
+      popularWords.value = wordsData.map((word, index) => ({
         id: index + 1,
         word: word.word,
         count: word.count
@@ -840,23 +884,32 @@ const handleResize = () => {
 
 // 生命周期
 onMounted(async () => {
-  // 先初始化图表
-  await nextTick()
-  console.log('开始初始化图表...')
-  initTrendChart()
-  initUserDistributionChart()
-  initHourDistributionChart()
-  console.log('图表初始化完成，hourDistributionChartInstance存在:', !!hourDistributionChartInstance)
+  loading.value = true
+  try {
+    // 先初始化图表
+    await nextTick()
+    console.log('开始初始化图表...')
+    initTrendChart()
+    initUserDistributionChart()
+    initHourDistributionChart()
+    console.log('图表初始化完成，hourDistributionChartInstance存在:', !!hourDistributionChartInstance)
 
-  // 然后加载数据
-  await Promise.all([
-    loadStats(),
-    loadTrendData(),
-    loadRecentGenerations(),
-    loadUserAnalytics(),
-    loadHourDistribution(),
-    loadPopularWords()
-  ])
+    // 然后加载数据
+    await Promise.all([
+      loadStats(),
+      loadTrendData(),
+      loadRecentGenerations(),
+      loadPopularPrompts(),
+      loadUserAnalytics(),
+      loadHourDistribution(),
+      loadPopularWords()
+    ])
+  } catch (error) {
+    console.error('页面初始化失败:', error)
+    ElMessage.error('页面初始化失败: ' + error.message)
+  } finally {
+    loading.value = false
+  }
 
   window.addEventListener('resize', handleResize)
 })
@@ -1024,11 +1077,20 @@ onUnmounted(cleanup)
 .chart-content {
   height: 300px;
   padding: var(--admin-padding-md);
+  position: relative;
 }
 
 .chart {
   width: 100%;
   height: 100%;
+}
+
+.chart-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
 }
 
 .bottom-section {
@@ -1120,11 +1182,13 @@ onUnmounted(cleanup)
   flex-shrink: 0;
 }
 
-.empty-words {
+.empty-words,
+.empty-generations {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 200px;
+  padding: var(--admin-padding-lg);
 }
 
 .prompt-item {
