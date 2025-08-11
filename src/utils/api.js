@@ -292,13 +292,11 @@ export const systemAPI = {
   /**
    * 更新系统配置
    * @param {Object} config - 配置数据
-   * @param {string} config.siteName - 网站名称
-   * @param {string} config.siteDescription - 网站描述
-   * @param {number} config.maxFileSize - 最大文件大小
-   * @param {Array<string>} config.allowedFormats - 允许的文件格式
-   * @param {boolean} config.enableRegistration - 是否启用注册
-   * @param {boolean} config.enableEmailVerification - 是否启用邮箱验证
-   * @param {string} config.defaultUserRole - 默认用户角色
+   * @param {Object} config.basic - 基础配置
+   * @param {Object} config.image - 图片生成配置  
+   * @param {Object} config.limits - 用户限制配置
+   * @param {Object} config.storage - 存储配置
+   * @param {Object} config.security - 安全配置
    */
   updateSystemConfig(config) {
     return adminRequest.put('/admin/system/config', config)
@@ -310,6 +308,20 @@ export const systemAPI = {
    */
   clearCache(cacheTypes = ['temp', 'logs', 'thumbnails']) {
     return adminRequest.post('/admin/system/clear-cache', { cacheTypes })
+  },
+
+  /**
+   * 获取系统配置（废弃，向后兼容）
+   */
+  getConfig() {
+    return this.getSystemConfig()
+  },
+
+  /**
+   * 更新系统配置（废弃，向后兼容）
+   */
+  updateConfig(config) {
+    return this.updateSystemConfig(config)
   }
 }
 

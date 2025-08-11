@@ -19,7 +19,7 @@
     </div>
     
     <!-- 配置表单 -->
-    <div class="config-content">
+    <div class="config-content" v-loading="loading" element-loading-text="正在加载配置...">
       <el-row :gutter="24">
         <!-- 基础配置 -->
         <el-col :span="24">
@@ -31,11 +31,11 @@
               </div>
             </template>
             
-            <el-form :model="config.basic" label-width="120px" class="config-form">
+            <el-form :model="config.basic" :rules="basicRules" ref="basicFormRef" label-width="120px" class="config-form">
               <el-row :gutter="24">
                 <el-col :span="12">
-                  <el-form-item label="系统名称">
-                    <el-input v-model="config.basic.systemName" placeholder="请输入系统名称" />
+                  <el-form-item label="系统名称" prop="systemName">
+                    <el-input v-model="config.basic.systemName" placeholder="请输入系统名称" maxlength="100" show-word-limit />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -44,8 +44,8 @@
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item label="管理员邮箱">
-                    <el-input v-model="config.basic.adminEmail" placeholder="请输入管理员邮箱" />
+                  <el-form-item label="管理员邮箱" prop="adminEmail">
+                    <el-input v-model="config.basic.adminEmail" placeholder="请输入管理员邮箱" type="email" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -82,11 +82,11 @@
               </div>
             </template>
             
-            <el-form :model="config.image" label-width="120px" class="config-form">
+            <el-form :model="config.image" :rules="imageRules" ref="imageFormRef" label-width="120px" class="config-form">
               <el-row :gutter="24">
                 <el-col :span="12">
-                  <el-form-item label="API 地址">
-                    <el-input v-model="config.image.apiUrl" placeholder="请输入 API 地址" />
+                  <el-form-item label="API 地址" prop="apiUrl">
+                    <el-input v-model="config.image.apiUrl" placeholder="请输入 API 地址" type="url" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -118,7 +118,7 @@
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item label="请求超时">
+                  <el-form-item label="请求超时" prop="timeout">
                     <el-input-number
                       v-model="config.image.timeout"
                       :min="10"
@@ -154,10 +154,10 @@
               </div>
             </template>
             
-            <el-form :model="config.limits" label-width="120px" class="config-form">
+            <el-form :model="config.limits" :rules="limitsRules" ref="limitsFormRef" label-width="120px" class="config-form">
               <el-row :gutter="24">
                 <el-col :span="12">
-                  <el-form-item label="每日生成限制">
+                  <el-form-item label="每日生成限制" prop="dailyLimit">
                     <el-input-number
                       v-model="config.limits.dailyLimit"
                       :min="1"
@@ -168,7 +168,7 @@
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item label="每小时限制">
+                  <el-form-item label="每小时限制" prop="hourlyLimit">
                     <el-input-number
                       v-model="config.limits.hourlyLimit"
                       :min="1"
@@ -225,7 +225,7 @@
               </div>
             </template>
             
-            <el-form :model="config.storage" label-width="120px" class="config-form">
+            <el-form :model="config.storage" :rules="storageRules" ref="storageFormRef" label-width="120px" class="config-form">
               <el-row :gutter="24">
                 <el-col :span="12">
                   <el-form-item label="存储类型">
@@ -243,12 +243,12 @@
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item label="访问域名">
-                    <el-input v-model="config.storage.domain" placeholder="请输入访问域名" />
+                  <el-form-item label="访问域名" prop="domain">
+                    <el-input v-model="config.storage.domain" placeholder="请输入访问域名" type="url" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item label="最大文件大小">
+                  <el-form-item label="最大文件大小" prop="maxFileSize">
                     <el-input-number
                       v-model="config.storage.maxFileSize"
                       :min="1"
@@ -273,7 +273,7 @@
               </div>
             </template>
             
-            <el-form :model="config.security" label-width="120px" class="config-form">
+            <el-form :model="config.security" :rules="securityRules" ref="securityFormRef" label-width="120px" class="config-form">
               <el-row :gutter="24">
                 <el-col :span="12">
                   <el-form-item label="JWT 密钥">
@@ -286,7 +286,7 @@
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item label="Token 有效期">
+                  <el-form-item label="Token 有效期" prop="tokenExpiry">
                     <el-input-number
                       v-model="config.security.tokenExpiry"
                       :min="1"
@@ -297,7 +297,7 @@
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item label="密码最小长度">
+                  <el-form-item label="密码最小长度" prop="minPasswordLength">
                     <el-input-number
                       v-model="config.security.minPasswordLength"
                       :min="6"
@@ -336,7 +336,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { systemAPI } from '@/utils/api'
 import {
@@ -344,7 +344,15 @@ import {
   Check
 } from '@element-plus/icons-vue'
 
+// 表单引用
+const basicFormRef = ref()
+const imageFormRef = ref()
+const limitsFormRef = ref()
+const storageFormRef = ref()
+const securityFormRef = ref()
+
 // 响应式数据
+const loading = ref(false)
 const saving = ref(false)
 
 // 配置数据
@@ -389,31 +397,154 @@ const config = reactive({
 // 原始配置（用于重置）
 const originalConfig = ref({})
 
+// 表单验证规则
+const basicRules = {
+  systemName: [
+    { required: true, message: '请输入系统名称', trigger: 'blur' },
+    { min: 1, max: 100, message: '系统名称长度应在 1 到 100 个字符', trigger: 'blur' }
+  ],
+  adminEmail: [
+    { required: true, message: '请输入管理员邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+  ]
+}
+
+const imageRules = {
+  apiUrl: [
+    { required: true, message: '请输入 API 地址', trigger: 'blur' },
+    { type: 'url', message: '请输入正确的 URL 格式', trigger: 'blur' }
+  ],
+  timeout: [
+    { required: true, message: '请输入请求超时时间', trigger: 'blur' },
+    { type: 'number', min: 10, max: 300, message: '超时时间必须在 10-300 秒之间', trigger: 'blur' }
+  ]
+}
+
+const limitsRules = {
+  dailyLimit: [
+    { required: true, message: '请输入每日限制', trigger: 'blur' },
+    { type: 'number', min: 1, max: 1000, message: '每日限制必须在 1-1000 之间', trigger: 'blur' }
+  ],
+  hourlyLimit: [
+    { required: true, message: '请输入每小时限制', trigger: 'blur' },
+    { type: 'number', min: 1, max: 100, message: '每小时限制必须在 1-100 之间', trigger: 'blur' }
+  ]
+}
+
+const storageRules = {
+  domain: [
+    { type: 'url', message: '请输入正确的域名格式', trigger: 'blur' }
+  ],
+  maxFileSize: [
+    { required: true, message: '请输入最大文件大小', trigger: 'blur' },
+    { type: 'number', min: 1, max: 100, message: '文件大小必须在 1-100 MB 之间', trigger: 'blur' }
+  ]
+}
+
+const securityRules = {
+  tokenExpiry: [
+    { required: true, message: '请输入 Token 有效期', trigger: 'blur' },
+    { type: 'number', min: 1, max: 168, message: 'Token 有效期必须在 1-168 小时之间', trigger: 'blur' }
+  ],
+  minPasswordLength: [
+    { required: true, message: '请输入密码最小长度', trigger: 'blur' },
+    { type: 'number', min: 6, max: 20, message: '密码长度必须在 6-20 字符之间', trigger: 'blur' }
+  ]
+}
+
 // 加载配置
 const loadConfig = async () => {
+  loading.value = true
   try {
-    const response = await systemAPI.getConfig()
+    const response = await systemAPI.getSystemConfig()
     if (response.success && response.data) {
-      // 将后端配置映射到前端配置结构
       const backendConfig = response.data
 
       // 更新基础配置
-      if (backendConfig.systemName) config.basic.systemName = backendConfig.systemName
-      if (backendConfig.version) config.basic.version = backendConfig.version
-      if (backendConfig.adminEmail) config.basic.adminEmail = backendConfig.adminEmail
+      config.basic.systemName = backendConfig.systemName || config.basic.systemName
+      config.basic.version = backendConfig.version || config.basic.version
+      config.basic.adminEmail = backendConfig.adminEmail || config.basic.adminEmail
+      config.basic.timezone = backendConfig.timezone || config.basic.timezone
+      config.basic.description = backendConfig.description || config.basic.description
 
-      // 更新其他配置...
+      // 更新图片生成配置
+      config.image.apiUrl = backendConfig.apiUrl || config.image.apiUrl
+      config.image.apiKey = backendConfig.apiKey === '[HIDDEN]' ? '' : (backendConfig.apiKey || config.image.apiKey)
+      config.image.defaultModel = backendConfig.defaultModel || config.image.defaultModel
+      config.image.defaultSize = backendConfig.defaultSize || config.image.defaultSize
+      config.image.timeout = backendConfig.timeout || config.image.timeout
+      config.image.maxRetries = backendConfig.maxRetries || config.image.maxRetries
+
+      // 更新用户限制配置
+      config.limits.dailyLimit = backendConfig.dailyLimit || config.limits.dailyLimit
+      config.limits.hourlyLimit = backendConfig.hourlyLimit || config.limits.hourlyLimit
+      config.limits.maxPromptLength = backendConfig.maxPromptLength || config.limits.maxPromptLength
+      config.limits.imageRetentionDays = backendConfig.imageRetentionDays || config.limits.imageRetentionDays
+      config.limits.allowRegistration = backendConfig.allowRegistration !== undefined ? backendConfig.allowRegistration : config.limits.allowRegistration
+
+      // 更新存储配置
+      config.storage.type = backendConfig.storageType || config.storage.type
+      config.storage.path = backendConfig.storagePath || config.storage.path
+      config.storage.domain = backendConfig.storageDomain || config.storage.domain
+      config.storage.maxFileSize = backendConfig.maxFileSize || config.storage.maxFileSize
+
+      // 更新安全配置
+      config.security.jwtSecret = backendConfig.jwtSecret === '[HIDDEN]' ? '' : (backendConfig.jwtSecret || config.security.jwtSecret)
+      config.security.tokenExpiry = backendConfig.tokenExpiry || config.security.tokenExpiry
+      config.security.minPasswordLength = backendConfig.minPasswordLength || config.security.minPasswordLength
+      config.security.maxLoginAttempts = backendConfig.maxLoginAttempts || config.security.maxLoginAttempts
+      config.security.enableContentFilter = backendConfig.enableContentFilter !== undefined ? backendConfig.enableContentFilter : config.security.enableContentFilter
+
       originalConfig.value = JSON.parse(JSON.stringify(config))
+      console.log('配置加载成功')
+      ElMessage.success('配置加载成功')
     }
   } catch (error) {
-    ElMessage.error('加载配置失败')
+    ElMessage.error('加载配置失败: ' + (error.message || '未知错误'))
     console.error('加载配置失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 验证所有表单
+const validateAllForms = async () => {
+  const validationPromises = []
+  
+  if (basicFormRef.value) {
+    validationPromises.push(basicFormRef.value.validate())
+  }
+  if (imageFormRef.value) {
+    validationPromises.push(imageFormRef.value.validate())
+  }
+  if (limitsFormRef.value) {
+    validationPromises.push(limitsFormRef.value.validate())
+  }
+  if (storageFormRef.value) {
+    validationPromises.push(storageFormRef.value.validate())
+  }
+  if (securityFormRef.value) {
+    validationPromises.push(securityFormRef.value.validate())
+  }
+  
+  try {
+    await Promise.all(validationPromises)
+    return true
+  } catch (error) {
+    ElMessage.error('请检查表单输入是否正确')
+    return false
   }
 }
 
 // 保存配置
 const handleSave = async () => {
   try {
+    // 先验证表单
+    const isValid = await validateAllForms()
+    if (!isValid) {
+      return
+    }
+
     await ElMessageBox.confirm(
       '确定要保存配置吗？部分配置可能需要重启系统才能生效。',
       '确认保存',
@@ -425,14 +556,31 @@ const handleSave = async () => {
     )
     
     saving.value = true
-    const response = await systemAPI.updateConfig(config)
+    const response = await systemAPI.updateSystemConfig(config)
     if (response.success) {
       ElMessage.success('配置保存成功')
       originalConfig.value = JSON.parse(JSON.stringify(config))
+      
+      // 显示更新的字段信息
+      if (response.data && response.data.updatedFields && response.data.updatedFields.length > 0) {
+        console.log('已更新的配置项:', response.data.updatedFields)
+        ElMessage.info(`成功更新 ${response.data.updatedCount} 项配置`)
+      }
+    } else {
+      throw new Error(response.message || '保存失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('保存配置失败')
+      const errorMessage = error.response?.data?.message || error.message || '保存配置失败'
+      ElMessage.error(errorMessage)
+      
+      // 显示验证错误
+      if (error.response?.data?.errors) {
+        error.response.data.errors.forEach(err => {
+          ElMessage.error(err)
+        })
+      }
+      
       console.error('保存配置失败:', error)
     }
   } finally {
@@ -463,6 +611,19 @@ const handleReset = async () => {
 // 初始化
 onMounted(() => {
   loadConfig()
+})
+
+// 检测配置变化
+const hasChanges = computed(() => {
+  return JSON.stringify(config) !== JSON.stringify(originalConfig.value)
+})
+
+// 暴露给模板使用
+defineExpose({
+  hasChanges,
+  loadConfig,
+  handleSave,
+  handleReset
 })
 </script>
 
