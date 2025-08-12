@@ -311,6 +311,38 @@ export const systemAPI = {
   },
 
   /**
+   * 获取系统日志
+   * @param {Object} params - 查询参数
+   * @param {number} params.page - 页码
+   * @param {number} params.pageSize - 每页数量
+   * @param {string} params.level - 日志级别
+   * @param {string} params.type - 日志类型
+   * @param {string} params.keyword - 关键词
+   * @param {string} params.startTime - 开始时间
+   * @param {string} params.endTime - 结束时间
+   * @param {string} params.sortBy - 排序字段
+   * @param {string} params.sortOrder - 排序方向
+   */
+  getSystemLogs(params = {}) {
+    return adminRequest.get('/admin/system/logs', { params })
+  },
+
+  /**
+   * 导出系统日志
+   * @param {Object} params - 导出参数
+   */
+  exportSystemLogs(params = {}) {
+    return adminRequest.get('/admin/system/logs/export', { params })
+  },
+
+  /**
+   * 清空系统日志
+   */
+  clearSystemLogs() {
+    return adminRequest.delete('/admin/system/logs')
+  },
+
+  /**
    * 获取系统配置（废弃，向后兼容）
    */
   getConfig() {
