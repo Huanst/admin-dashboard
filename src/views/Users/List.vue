@@ -319,16 +319,21 @@ const loadUserList = async () => {
     console.log('后端API响应:', response)
     
     if (response.success && response.data) {
-      // 映射字段名以匹配模板
-      userList.value = (response.data.list || []).map(user => ({
-        ...user,
-        createdAt: user.created_at,
-        lastLoginAt: user.last_login
-      }))
+      userList.value = response.data.list || []
       pagination.total = response.data.total || 0
-      console.log('用户列表原始数据:', response.data.list)
-      console.log('映射后的用户列表:', userList.value)
+      console.log('用户列表数据:', userList.value)
       console.log('总数:', pagination.total)
+      
+      // 调试：检查时间字段
+      if (userList.value.length > 0) {
+        const firstUser = userList.value[0];
+        console.log('第一个用户的时间字段:', {
+          createdAt: firstUser.createdAt,
+          lastLoginAt: firstUser.lastLoginAt,
+          created_at: firstUser.created_at,
+          last_login: firstUser.last_login
+        });
+      }
       
       // 如果搜索结果为空，显示提示
       if (userList.value.length === 0 && (params.username || params.email || params.status)) {

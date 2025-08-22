@@ -357,11 +357,16 @@ const loadUserDetail = async () => {
     ])
 
     const userData = userResponse.data
+    console.log('用户详情原始数据:', userData)
+    console.log('时间字段检查:', {
+      createdAt: userData.createdAt,
+      lastLoginAt: userData.lastLoginAt,
+      created_at: userData.created_at,
+      last_login: userData.last_login
+    })
+    
     user.value = {
       ...userData,
-      // 格式化字段名以匹配模板
-      createdAt: userData.created_at,
-      lastLoginAt: userData.last_login,
       stats: {
         totalImages: userData.image_count || 0,
         todayImages: userData.today_images || 0,
