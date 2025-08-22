@@ -60,35 +60,13 @@
                 <label>用户ID</label>
                 <span>{{ user.id }}</span>
               </div>
-              <!-- 调试：测试时间格式化 -->
-              <div class="info-item" style="border: 1px solid red; padding: 5px;">
-                <label>调试测试</label>
-                <div>
-                  <div>当前时间: {{ formatDate(new Date()) }}</div>
-                  <div>测试字符串: {{ formatDate('2025-08-22T10:30:00.000Z') }}</div>
-                </div>
-              </div>
               <div class="info-item">
                 <label>注册时间</label>
-                <div class="time-info">
-                  <span class="time-primary">
-                    {{ user.createdAt ? formatDate(user.createdAt) : '未知' }}
-                    <!-- 调试信息 -->
-                    <small style="color: red; font-size: 12px;">[调试: {{ user.createdAt }}]</small>
-                  </span>
-                  <span v-if="user.createdAt" class="time-relative">{{ getRelativeTime(user.createdAt) }}</span>
-                </div>
+                <span>{{ formatDate(user.createdAt) }}</span>
               </div>
               <div class="info-item">
                 <label>最后登录</label>
-                <div class="time-info">
-                  <span class="time-primary">
-                    {{ user.lastLoginAt ? formatDate(user.lastLoginAt) : '从未登录' }}
-                    <!-- 调试信息 -->
-                    <small style="color: red; font-size: 12px;">[调试: {{ user.lastLoginAt }}]</small>
-                  </span>
-                  <span v-if="user.lastLoginAt" class="time-relative">{{ getRelativeTime(user.lastLoginAt) }}</span>
-                </div>
+                <span>{{ user.lastLoginAt ? formatDate(user.lastLoginAt) : '从未登录' }}</span>
               </div>
             </div>
           </div>
@@ -373,16 +351,11 @@ const loadUserDetail = async () => {
     ])
 
     const userData = userResponse.data
-    console.log('用户详情原始数据:', userData)
-    console.log('时间字段检查:', {
-      createdAt: userData.createdAt,
-      lastLoginAt: userData.lastLoginAt,
-      created_at: userData.created_at,
-      last_login: userData.last_login
-    })
-    
     user.value = {
       ...userData,
+      // 格式化字段名以匹配模板
+      createdAt: userData.created_at,
+      lastLoginAt: userData.last_login,
       stats: {
         totalImages: userData.image_count || 0,
         todayImages: userData.today_images || 0,
@@ -664,24 +637,6 @@ onMounted(() => {
 .info-item span {
   font-size: 1rem;
   color: var(--el-text-color-primary);
-}
-
-/* 时间信息样式 */
-.time-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.time-primary {
-  color: var(--el-text-color-primary);
-  font-weight: 500;
-  font-size: 1rem;
-}
-
-.time-relative {
-  color: var(--el-text-color-regular);
-  font-size: 0.875rem;
 }
 
 .stats-grid {

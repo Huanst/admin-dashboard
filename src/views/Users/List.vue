@@ -135,27 +135,22 @@
             </template>
           </el-table-column>
           
-          <el-table-column label="注册时间" width="200" align="center">
+          <el-table-column label="注册时间" width="180" align="center">
             <template #default="{ row }">
               <div class="time-info">
-                <div>{{ row.createdAt ? formatDate(row.createdAt) : '未知' }}</div>
-                <div class="relative-time">{{ row.createdAt ? getRelativeTime(row.createdAt) : '' }}</div>
-                <small style="color: red; font-size: 10px;">[{{ row.createdAt }}]</small>
+                <div>{{ formatDate(row.createdAt) }}</div>
+                <div class="relative-time">{{ getRelativeTime(row.createdAt) }}</div>
               </div>
             </template>
           </el-table-column>
           
-          <el-table-column label="最后登录" width="200" align="center">
+          <el-table-column label="最后登录" width="180" align="center">
             <template #default="{ row }">
               <div class="time-info" v-if="row.lastLoginAt">
                 <div>{{ formatDate(row.lastLoginAt) }}</div>
                 <div class="relative-time">{{ getRelativeTime(row.lastLoginAt) }}</div>
-                <small style="color: red; font-size: 10px;">[{{ row.lastLoginAt }}]</small>
               </div>
-              <div v-else class="no-data">
-                从未登录
-                <small style="color: red; font-size: 10px;">[{{ row.lastLoginAt }}]</small>
-              </div>
+              <span v-else class="no-data">从未登录</span>
             </template>
           </el-table-column>
           
@@ -232,17 +227,9 @@
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="图片数量">{{ currentUser.imageCount || 0 }}</el-descriptions-item>
-          <el-descriptions-item label="注册时间">
-            <div class="time-display">
-              <div>{{ formatDate(currentUser.createdAt) }}</div>
-              <div class="time-relative">{{ getRelativeTime(currentUser.createdAt) }}</div>
-            </div>
-          </el-descriptions-item>
+          <el-descriptions-item label="注册时间">{{ formatDate(currentUser.createdAt) }}</el-descriptions-item>
           <el-descriptions-item label="最后登录">
-            <div class="time-display">
-              <div>{{ currentUser.lastLoginAt ? formatDate(currentUser.lastLoginAt) : '从未登录' }}</div>
-              <div v-if="currentUser.lastLoginAt" class="time-relative">{{ getRelativeTime(currentUser.lastLoginAt) }}</div>
-            </div>
+            {{ currentUser.lastLoginAt ? formatDate(currentUser.lastLoginAt) : '从未登录' }}
           </el-descriptions-item>
         </el-descriptions>
       </div>
@@ -326,19 +313,8 @@ const loadUserList = async () => {
     if (response.success && response.data) {
       userList.value = response.data.list || []
       pagination.total = response.data.total || 0
-      console.log('用户列表数据:', userList.value)
+      console.log('用户列表:', userList.value)
       console.log('总数:', pagination.total)
-      
-      // 调试：检查时间字段
-      if (userList.value.length > 0) {
-        const firstUser = userList.value[0];
-        console.log('第一个用户的时间字段:', {
-          createdAt: firstUser.createdAt,
-          lastLoginAt: firstUser.lastLoginAt,
-          created_at: firstUser.created_at,
-          last_login: firstUser.last_login
-        });
-      }
       
       // 如果搜索结果为空，显示提示
       if (userList.value.length === 0 && (params.username || params.email || params.status)) {
@@ -643,35 +619,6 @@ onMounted(() => {
 .user-basic p {
   margin: 0 0 8px 0;
   color: var(--el-text-color-regular);
-}
-
-/* 时间显示样式 */
-.time-display {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.time-relative {
-  color: var(--el-text-color-regular);
-  font-size: 0.875rem;
-}
-
-/* 表格中的时间显示 */
-.time-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.relative-time {
-  color: var(--el-text-color-regular);
-  font-size: 0.75rem;
-}
-
-.no-data {
-  color: var(--el-text-color-placeholder);
-  font-style: italic;
 }
 
 /* 响应式设计 */
