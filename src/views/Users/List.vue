@@ -319,9 +319,15 @@ const loadUserList = async () => {
     console.log('后端API响应:', response)
     
     if (response.success && response.data) {
-      userList.value = response.data.list || []
+      // 映射字段名以匹配模板
+      userList.value = (response.data.list || []).map(user => ({
+        ...user,
+        createdAt: user.created_at,
+        lastLoginAt: user.last_login
+      }))
       pagination.total = response.data.total || 0
-      console.log('用户列表:', userList.value)
+      console.log('用户列表原始数据:', response.data.list)
+      console.log('映射后的用户列表:', userList.value)
       console.log('总数:', pagination.total)
       
       // 如果搜索结果为空，显示提示
@@ -639,6 +645,23 @@ onMounted(() => {
 .time-relative {
   color: var(--el-text-color-regular);
   font-size: 0.875rem;
+}
+
+/* 表格中的时间显示 */
+.time-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.relative-time {
+  color: var(--el-text-color-regular);
+  font-size: 0.75rem;
+}
+
+.no-data {
+  color: var(--el-text-color-placeholder);
+  font-style: italic;
 }
 
 /* 响应式设计 */

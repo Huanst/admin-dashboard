@@ -63,8 +63,8 @@
               <div class="info-item">
                 <label>注册时间</label>
                 <div class="time-info">
-                  <span class="time-primary">{{ formatDate(user.createdAt) }}</span>
-                  <span class="time-relative">{{ getRelativeTime(user.createdAt) }}</span>
+                  <span class="time-primary">{{ user.createdAt ? formatDate(user.createdAt) : '未知' }}</span>
+                  <span v-if="user.createdAt" class="time-relative">{{ getRelativeTime(user.createdAt) }}</span>
                 </div>
               </div>
               <div class="info-item">
