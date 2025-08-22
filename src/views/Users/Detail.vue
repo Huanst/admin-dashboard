@@ -62,11 +62,17 @@
               </div>
               <div class="info-item">
                 <label>注册时间</label>
-                <span>{{ formatDate(user.createdAt) }}</span>
+                <div class="time-info">
+                  <span class="time-primary">{{ formatDate(user.createdAt) }}</span>
+                  <span class="time-relative">{{ getRelativeTime(user.createdAt) }}</span>
+                </div>
               </div>
               <div class="info-item">
                 <label>最后登录</label>
-                <span>{{ user.lastLoginAt ? formatDate(user.lastLoginAt) : '从未登录' }}</span>
+                <div class="time-info">
+                  <span class="time-primary">{{ user.lastLoginAt ? formatDate(user.lastLoginAt) : '从未登录' }}</span>
+                  <span v-if="user.lastLoginAt" class="time-relative">{{ getRelativeTime(user.lastLoginAt) }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -637,6 +643,24 @@ onMounted(() => {
 .info-item span {
   font-size: 1rem;
   color: var(--el-text-color-primary);
+}
+
+/* 时间信息样式 */
+.time-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.time-primary {
+  color: var(--el-text-color-primary);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.time-relative {
+  color: var(--el-text-color-regular);
+  font-size: 0.875rem;
 }
 
 .stats-grid {

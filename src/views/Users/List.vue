@@ -227,9 +227,17 @@
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="图片数量">{{ currentUser.imageCount || 0 }}</el-descriptions-item>
-          <el-descriptions-item label="注册时间">{{ formatDate(currentUser.createdAt) }}</el-descriptions-item>
+          <el-descriptions-item label="注册时间">
+            <div class="time-display">
+              <div>{{ formatDate(currentUser.createdAt) }}</div>
+              <div class="time-relative">{{ getRelativeTime(currentUser.createdAt) }}</div>
+            </div>
+          </el-descriptions-item>
           <el-descriptions-item label="最后登录">
-            {{ currentUser.lastLoginAt ? formatDate(currentUser.lastLoginAt) : '从未登录' }}
+            <div class="time-display">
+              <div>{{ currentUser.lastLoginAt ? formatDate(currentUser.lastLoginAt) : '从未登录' }}</div>
+              <div v-if="currentUser.lastLoginAt" class="time-relative">{{ getRelativeTime(currentUser.lastLoginAt) }}</div>
+            </div>
           </el-descriptions-item>
         </el-descriptions>
       </div>
@@ -619,6 +627,18 @@ onMounted(() => {
 .user-basic p {
   margin: 0 0 8px 0;
   color: var(--el-text-color-regular);
+}
+
+/* 时间显示样式 */
+.time-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.time-relative {
+  color: var(--el-text-color-regular);
+  font-size: 0.875rem;
 }
 
 /* 响应式设计 */
