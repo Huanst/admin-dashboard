@@ -135,22 +135,27 @@
             </template>
           </el-table-column>
           
-          <el-table-column label="注册时间" width="180" align="center">
+          <el-table-column label="注册时间" width="200" align="center">
             <template #default="{ row }">
               <div class="time-info">
-                <div>{{ formatDate(row.createdAt) }}</div>
-                <div class="relative-time">{{ getRelativeTime(row.createdAt) }}</div>
+                <div>{{ row.createdAt ? formatDate(row.createdAt) : '未知' }}</div>
+                <div class="relative-time">{{ row.createdAt ? getRelativeTime(row.createdAt) : '' }}</div>
+                <small style="color: red; font-size: 10px;">[{{ row.createdAt }}]</small>
               </div>
             </template>
           </el-table-column>
           
-          <el-table-column label="最后登录" width="180" align="center">
+          <el-table-column label="最后登录" width="200" align="center">
             <template #default="{ row }">
               <div class="time-info" v-if="row.lastLoginAt">
                 <div>{{ formatDate(row.lastLoginAt) }}</div>
                 <div class="relative-time">{{ getRelativeTime(row.lastLoginAt) }}</div>
+                <small style="color: red; font-size: 10px;">[{{ row.lastLoginAt }}]</small>
               </div>
-              <span v-else class="no-data">从未登录</span>
+              <div v-else class="no-data">
+                从未登录
+                <small style="color: red; font-size: 10px;">[{{ row.lastLoginAt }}]</small>
+              </div>
             </template>
           </el-table-column>
           
