@@ -216,6 +216,18 @@ export const analyticsAPI = {
    */
   getHourDistribution(days = 7) {
     return adminRequest.get('/admin/analytics/hour-distribution', { params: { days } })
+  },
+
+  getUserDistribution() {
+    return adminRequest.get('/admin/analytics/user-distribution')
+  },
+
+  /**
+   * 获取热门提示词
+   * @param {number} limit - 限制数量 (默认: 10)
+   */
+  getPopularPrompts(limit = 10) {
+    return adminRequest.get('/admin/stats/popular-prompts', { params: { limit } })
   }
 }
 
@@ -264,8 +276,8 @@ export const dashboardAPI = {
    */
   getPopularWords(params = {}) {
     const { limit = 20, days = 7, minLength = 2 } = params
-    return adminRequest.get('/admin/stats/popular-words', { 
-      params: { limit, days, minLength } 
+    return adminRequest.get('/admin/stats/popular-words', {
+      params: { limit, days, minLength }
     })
   }
 }
@@ -371,7 +383,7 @@ export const uploadAPI = {
   uploadAvatar(file) {
     const formData = new FormData()
     formData.append('avatar', file)
-    
+
     return request.post('/api/upload/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'

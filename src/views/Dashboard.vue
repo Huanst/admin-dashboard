@@ -462,8 +462,11 @@ const loadUserTrend = async (period = userTrendPeriod.value) => {
 
     const response = await dashboardAPI.getUserGrowthTrend(days)
     if (response.success && response.data) {
+      // 处理数据结构 - 兼容数组直接返回或对象包含trend字段
+      const trendData = Array.isArray(response.data) ? response.data : (response.data.trend || [])
+      
       // 格式化日期显示
-      userTrendData.value = response.data.map(item => ({
+      userTrendData.value = trendData.map((item: any) => ({
         ...item,
         date: formatDateForChart(item.date, period)
       }))
@@ -586,7 +589,9 @@ const loadPopularPrompts = async () => {
   try {
     const response = await dashboardAPI.getPopularPrompts(5)
     if (response.success && response.data) {
-      popularPrompts.value = response.data
+      // 处理数据结构 - 兼容数组直接返回或对象包含prompts字段
+      const promptsData = Array.isArray(response.data) ? response.data : (response.data.prompts || [])
+      popularPrompts.value = promptsData
     }
   } catch (error) {
     console.warn('热门提示词加载失败，使用模拟数据:', error)

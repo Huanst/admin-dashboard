@@ -472,12 +472,7 @@ const initUserDistributionChart = () => {
         labelLine: {
           show: false
         },
-        data: [
-          { value: 335, name: '活跃用户' },
-          { value: 310, name: '普通用户' },
-          { value: 234, name: '新用户' },
-          { value: 135, name: '沉默用户' }
-        ]
+        data: [] // 初始化为空数组，等待数据加载
       }
     ]
   }
@@ -485,19 +480,42 @@ const initUserDistributionChart = () => {
   userDistributionChartInstance.setOption(option)
 }
 
+// 更新用户分布图表
+const updateUserDistributionChart = (data) => {
+  if (!userDistributionChartInstance || !data) return
+
+  const formattedData = data.map(item => ({
+    value: item.value,
+    name: item.name,
+    itemStyle: { color: item.color }
+  }))
+
+  userDistributionChartInstance.setOption({
+    series: [{
+      data: formattedData
+    }]
+  })
+}
+
+// 加载用户分布数据
+const loadUserDistribution = async () => {
+  try {
+    const response = await analyticsAPI.getUserDistribution()
+    if (response.success && response.data) {
+      updateUserDistributionChart(response.data)
+    } else {
+      console.error('用户分布API返回失败:', response)
+    }
+  } catch (error) {
+    console.error('用户分布数据加载失败:', error)
+  }
+}
+
 // 初始化时段分布图表
 const initHourDistributionChart = () => {
-  console.log('initHourDistributionChart被调用')
-  console.log('hourDistributionChart.value存在:', !!hourDistributionChart.value)
+  if (!hourDistributionChart.value) return
 
-  if (!hourDistributionChart.value) {
-    console.error('hourDistributionChart DOM元素不存在')
-    return
-  }
-
-  console.log('开始初始化ECharts实例...')
   hourDistributionChartInstance = echarts.init(hourDistributionChart.value)
-  console.log('ECharts实例创建成功:', !!hourDistributionChartInstance)
 
   const option = {
     tooltip: {
@@ -539,24 +557,14 @@ const initHourDistributionChart = () => {
   }
 
   hourDistributionChartInstance.setOption(option)
-  console.log('时段分布图表初始化完成')
 }
 
 // 更新时段分布图表
 const updateHourDistributionChart = (hourData) => {
-  console.log('updateHourDistributionChart被调用，数据:', hourData)
-  console.log('图表实例存在:', !!hourDistributionChartInstance)
-
-  if (!hourDistributionChartInstance || !hourData) {
-    console.error('图表实例或数据不存在')
-    return
-  }
+  if (!hourDistributionChartInstance || !hourData) return
 
   const counts = hourData.map(item => item.count)
   const labels = hourData.map(item => item.hourLabel)
-
-  console.log('处理后的数据 - counts:', counts)
-  console.log('处理后的数据 - labels:', labels)
 
   const option = {
     xAxis: {
@@ -575,9 +583,7 @@ const updateHourDistributionChart = (hourData) => {
     }]
   }
 
-  console.log('设置图表选项:', option)
   hourDistributionChartInstance.setOption(option)
-  console.log('图表选项设置完成')
 }
 
 // 加载趋势数据
@@ -692,7 +698,7 @@ const loadRecentGenerations = async () => {
 // 加载热门提示词数据
 const loadPopularPrompts = async () => {
   try {
-    const response = await dashboardAPI.getPopularPrompts(10) // 获取前10个热门提示词
+    const response = await analyticsAPI.getPopularPrompts(10) // 获取前10个热门提示词
     if (response.success && response.data) {
       // 处理数据结构 - response.data可能是数组或包含prompts字段的对象
       const promptsData = Array.isArray(response.data) ? response.data : (response.data.prompts || [])
@@ -700,8 +706,8 @@ const loadPopularPrompts = async () => {
         id: index + 1,
         text: prompt.text || prompt.prompt,
         count: prompt.count,
-        userCount: prompt.userCount || Math.floor(prompt.count / 2), // 如果没有用户数，估算一个
-        trend: prompt.trend || Math.floor(Math.random() * 20) - 10 // 如果没有趋势数据，模拟一个
+        userCount: prompt.userCount || 0, 
+        trend: prompt.trend || 0 
       }))
     } else {
       console.error('获取热门提示词失败:', response.message)
@@ -730,15 +736,10 @@ const loadUserAnalytics = async () => {
 // 加载时段分布数据
 const loadHourDistribution = async () => {
   try {
-    console.log('开始加载时段分布数据...')
-    const days = Math.abs(new Date(dateRange.value[1]) - new Date(dateRange.value[0])) / (1000 * 60 * 60 * 24)
-    console.log('计算的天数:', Math.ceil(days) || 7)
-
-    const response = await analyticsAPI.getHourDistribution(Math.ceil(days) || 7)
-    console.log('时段分布API响应:', response)
+    const days = 7 // 默认统计最近7天
+    const response = await analyticsAPI.getHourDistribution(days)
 
     if (response.success && response.data) {
-      console.log('时段分布数据:', response.data)
       updateHourDistributionChart(response.data)
     } else {
       console.error('时段分布API返回失败:', response)
@@ -766,6 +767,7 @@ const handleRefresh = async () => {
       loadTrendData(),
       loadRecentGenerations(),
       loadPopularPrompts(),
+      loadUserDistribution(),
       loadUserAnalytics(),
       loadHourDistribution(),
       loadPopularWords()
@@ -900,6 +902,7 @@ onMounted(async () => {
       loadTrendData(),
       loadRecentGenerations(),
       loadPopularPrompts(),
+      loadUserDistribution(), // 加载用户分布
       loadUserAnalytics(),
       loadHourDistribution(),
       loadPopularWords()
